@@ -3,8 +3,8 @@
 Simulador de SO com escalonamento de tarefas e visualização gráfica.
 
 ## 👥 Equipe
-- 
-- 
+- Vicente Seabra
+- Giovanni Mioto
 
 ## 📋 Requisitos
 - Python 3.8+
