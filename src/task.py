@@ -1,16 +1,15 @@
 """
-Módulo contendo as classes Task e TCB (Task Control Block) para o simulador de SO.
+Módulo contendo as classes Task e TCB (Task Control Block) para o simulador.
 
 Este módulo implementa as estruturas de dados fundamentais para representar
 processos/tarefas no sistema operacional simulado.
 
-Implementação completamente independente, sem bibliotecas externas.
 """
 
 
 class TaskState:
     """
-    Classe para representar os possíveis estados de uma tarefa/processo.
+    Representar os possíveis estados de uma tarefa/processo.
     
     Estados baseados no modelo clássico de estados de processo em SO:
     - NOVO: Processo criado mas ainda não admitido no sistema
@@ -38,7 +37,7 @@ class TaskState:
 
 class Task:
     """
-    Classe que representa uma tarefa/processo no simulador de SO.
+    Representa uma tarefa/processo no simulador de SO.
     
     Contém todos os atributos básicos necessários para o escalonamento
     e controle de processos.
@@ -57,8 +56,6 @@ class Task:
     
     def __init__(self, task_id, cor, ingresso, duracao, prioridade=0):
         """
-        Inicializa uma nova tarefa.
-        
         Args:
             task_id (str): Identificador único da tarefa
             cor (str): Cor para visualização (formato hexadecimal ou nome)
@@ -202,8 +199,8 @@ class TCB(Task):
     O TCB mantém informações adicionais sobre o histórico de execução,
     tempos de início e fim, e outras informações de controle necessárias
     para o escalonador e análise de desempenho.
-    
-    Attributes:
+
+    Atributos:
         tempo_inicio_execucao (int ou None): Tempo da primeira execução
         tempo_fim (int ou None): Tempo de finalização
         historico_execucao (list): Histórico detalhado de execução
@@ -222,8 +219,7 @@ class TCB(Task):
             prioridade (int, optional): Prioridade da tarefa. Defaults to 0.
         """
         super(TCB, self).__init__(task_id, cor, ingresso, duracao, prioridade)
-        
-        # Informações de controle detalhadas
+
         self.tempo_inicio_execucao = None
         self.tempo_fim = None
         self.historico_execucao = []

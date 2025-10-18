@@ -83,8 +83,8 @@ class TestCase:
         print("\n=== {} ===".format(self.__class__.__name__))
         for test_method in test_methods:
             self.run_test(test_method)
-        
-        print("Ran {} tests, {} failures".format(self.test_count, self.failures))
+
+        print("Executou {} testes, {} falhas".format(self.test_count, self.failures))
         return self.failures == 0
 
 
