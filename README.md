@@ -18,26 +18,104 @@ Simulador de SO com escalonamento de tarefas e visualização gráfica.
 ```
 simulador-so/
 ├── src/              # Código fonte
-├── tests/            # Testes
+│   ├── task.py           # Classes Task e TCB ✓
+│   ├── config_parser.py  # Parser de configuração ✓
+│   ├── scheduler.py      # Algoritmos de escalonamento
+│   ├── simulator.py      # Simulador principal
+│   ├── clock.py          # Relógio do sistema
+│   └── gantt.py          # Geração de diagramas
+├── tests/            # Testes unitários
+│   ├── test_scheduler.py        # Testes das estruturas ✓
+│   └── test_config_parser.py    # Testes do parser ✓
 ├── examples/         # Exemplos de configuração
+│   ├── config_fifo.txt          # Exemplo FIFO ✓
+│   ├── config_prioridade.txt    # Exemplo Prioridade ✓
+│   ├── config_srtf.txt          # Exemplo SRTF ✓
+│   └── exemplo_config_parser.py # Demonstração do parser ✓
 ├── output/           # Gráficos gerados
-└── docs/             # Documentação
+├── docs/             # Documentação
+│   ├── estruturas-dados.md  # Doc das estruturas ✓
+│   └── config-parser.md     # Doc do parser ✓
+└── README.md
 ```
 
 ## 🔧 Algoritmos Implementados
-- [ ] FIFO
-- [ ] SRTF
+- [ ] FIFO (First In First Out)
+- [ ] SJF (Shortest Job First)
+- [ ] SRTF (Shortest Remaining Time First)
 - [ ] Prioridade Preemptivo
+- [ ] Round Robin (RR)
 
 ## 📊 Formato do Arquivo de Configuração
+
+### Estrutura
 ```
-algoritmo_escalonamento;quantum
-id;cor;ingresso;duracao;prioridade;lista_eventos
+ALGORITMO;QUANTUM
+ID;COR;INGRESSO;DURACAO;PRIORIDADE;
+ID;COR;INGRESSO;DURACAO;PRIORIDADE;
+...
 ```
 
+### Exemplo
+```
+FIFO;2
+1;#FF0000;0;5;1;
+2;#00FF00;2;3;1;
+3;#0000FF;4;4;1;
+```
+
+**Para mais detalhes, consulte:** [`docs/config-parser.md`](docs/config-parser.md)
+
+## 💻 Como Usar o Parser
+
+```python
+from src.config_parser import ConfigParser
+
+# Parse do arquivo de configuração
+parser = ConfigParser()
+config, tasks = parser.parse_file('examples/config_fifo.txt')
+
+# Exibe informações
+print(f"Algoritmo: {config['algoritmo']}")
+print(f"Tarefas: {len(tasks)}")
+
+# Obtém resumo
+resumo = parser.obter_resumo()
+print(resumo)
+```
+
+
 ## 📝 Status do Desenvolvimento
-- [ ] Estrutura básica
+
+### ✅ Completado
+- [x] **Task 1.1** - Estruturas de Dados (Task, TCB)
+- [x] **Task 1.2** - Parser de Configuração
+  - Parser completo com validações
+  - 29 testes unitários (100% sucesso)
+  - Documentação detalhada
+  - Exemplos práticos
+
+### 🚧 Em Desenvolvimento
 - [ ] Algoritmos de escalonamento
+- [ ] Simulador principal
 - [ ] Modos de execução
-- [ ] Visualização gráfica
-- [ ] Testes completos
+- [ ] Visualização gráfica (Diagramas de Gantt)
+
+## 🧪 Executar Testes
+
+```powershell
+# Testes das estruturas de dados
+python tests/test_scheduler.py
+
+# Testes do parser de configuração
+python tests/test_config_parser.py
+
+# Todos os testes
+python tests/test_scheduler.py; python tests/test_config_parser.py
+```
+
+## 📚 Documentação
+
+- **[Estruturas de Dados](docs/estruturas-dados.md)** - Classes Task e TCB
+- **[Config Parser](docs/config-parser.md)** - Parser de arquivos de configuração
+
