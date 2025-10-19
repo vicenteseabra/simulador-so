@@ -558,7 +558,7 @@ if __name__ == '__main__':
     print("Teste 2: Criando e parseando arquivo de exemplo")
     try:
         arquivo_teste = 'config_teste.txt'
-        criar_arquivo_exemplo(arquivo_teste, 'RR', 3, 5)
+        criar_arquivo_exemplo(arquivo_teste, 'SRTF', 3, 5)
         
         parser = ConfigParser()
         config, tasks = parser.parse_file(arquivo_teste)
