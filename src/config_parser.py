@@ -474,43 +474,6 @@ class ConfigParser:
         }
 
 
-def criar_arquivo_exemplo(filename, algoritmo='FIFO', quantum=2, num_tarefas=3):
-    """
-    Função utilitária para criar um arquivo de configuração de exemplo.
-    
-    Args:
-        filename (str): Nome do arquivo a ser criado
-        algoritmo (str): Algoritmo de escalonamento
-        quantum (int): Quantum para Round Robin
-        num_tarefas (int): Número de tarefas a criar
-        
-    Returns:
-        bool: True se o arquivo foi criado com sucesso
-    """
-    try:
-        with open(filename, 'w') as f:
-            # Escreve linha de configuração
-            f.write("{};{}\n".format(algoritmo, quantum))
-            
-            # Cores de exemplo
-            cores = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF']
-            
-            # Escreve tarefas de exemplo
-            for i in range(num_tarefas):
-                task_id = str(i + 1)
-                cor = cores[i % len(cores)]
-                ingresso = i * 2
-                duracao = (i % 3) + 3  # 3, 4 ou 5
-                prioridade = i % 3  # 0, 1 ou 2
-                
-                f.write("{};{};{};{};{};\n".format(
-                    task_id, cor, ingresso, duracao, prioridade))
-        
-        return True
-    except Exception:
-        return False
-
-
 if __name__ == '__main__':
     """
     Testes básicos do parser.
@@ -554,36 +517,8 @@ if __name__ == '__main__':
     
     print("\n" + "="*50 + "\n")
     
-    # Teste 2: Criar arquivo de exemplo e parsear
-    print("Teste 2: Criando e parseando arquivo de exemplo")
-    try:
-        arquivo_teste = 'config_teste.txt'
-        criar_arquivo_exemplo(arquivo_teste, 'SRTF', 3, 5)
-        
-        parser = ConfigParser()
-        config, tasks = parser.parse_file(arquivo_teste)
-        
-        print("Arquivo de teste criado e parseado com sucesso!")
-        print("  Tarefas: {}".format(len(tasks)))
-        print("  Algoritmo: {}".format(config['algoritmo']))
-        
-        # Limpa arquivo de teste (manual)
-        try:
-            with open(arquivo_teste, 'r'):
-                pass
-            print("  (Lembre-se de deletar '{}' manualmente)".format(arquivo_teste))
-        except:
-            pass
-        
-        print("\n✓ Teste 2 passou!")
-        
-    except Exception as e:
-        print("✗ Erro no teste 2: {}".format(str(e)))
-    
-    print("\n" + "="*50 + "\n")
-    
-    # Teste 3: Validação de erros
-    print("Teste 3: Testando validação de erros")
+    # Teste 2: Validação de erros
+    print("Teste 2: Testando validação de erros")
     try:
         parser = ConfigParser()
         
@@ -594,7 +529,7 @@ if __name__ == '__main__':
         except FileNotFoundError:
             print("✓ FileNotFoundError capturado corretamente")
         
-        print("\n✓ Teste 3 passou!")
+        print("\n✓ Teste 2 passou!")
         
     except Exception as e:
-        print("✗ Erro no teste 3: {}".format(str(e)))
+        print("✗ Erro no teste 2: {}".format(str(e)))
