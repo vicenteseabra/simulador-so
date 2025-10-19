@@ -1,5 +1,3 @@
-# src/simulator.py
-
 from src.clock import Clock
 from src.task import TCB, TaskState
 
