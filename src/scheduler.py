@@ -59,3 +59,42 @@ class FIFOScheduler(Scheduler):
             if tarefa.estado in (TaskState.PRONTO, TaskState.EXECUTANDO):
                 return tarefa
         return None
+
+
+class SRTFScheduler(Scheduler):
+    """
+    Shortest Remaining Time First (SRTF) - Preemptivo.
+    
+    Seleciona a tarefa com menor tempo restante de execução.
+    Permite preempção quando chega uma tarefa com menor tempo restante.
+    """
+
+    def selecionar_proxima_tarefa(self) -> Optional[Task]:
+        tarefas_disponiveis = [t for t in self.fila_prontos 
+                               if t.estado in (TaskState.PRONTO, TaskState.EXECUTANDO)]
+        
+        if not tarefas_disponiveis:
+            return None
+        
+        # Seleciona tarefa com menor tempo restante
+        return min(tarefas_disponiveis, key=lambda t: t.tempo_restante)
+
+
+class PriorityPreemptiveScheduler(Scheduler):
+    """
+    Escalonamento por Prioridade Preemptivo.
+    
+    Seleciona a tarefa com maior prioridade (menor valor numérico).
+    Permite preempção quando chega uma tarefa com maior prioridade.
+    """
+
+    def selecionar_proxima_tarefa(self) -> Optional[Task]:
+        tarefas_disponiveis = [t for t in self.fila_prontos 
+                               if t.estado in (TaskState.PRONTO, TaskState.EXECUTANDO)]
+        
+        if not tarefas_disponiveis:
+            return None
+        
+        # Seleciona tarefa com menor valor de prioridade (maior prioridade)
+        return min(tarefas_disponiveis, key=lambda t: t.prioridade)
+
