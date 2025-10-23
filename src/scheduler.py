@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Dict, List, Optional, Type
 from src.task import Task, TaskState
 
 
@@ -12,9 +12,11 @@ class Scheduler(ABC):
     deve ser executada a seguir.
     """
 
-    def __init__(self):
+    def __init__(self, quantum: Optional[int] = None):
         # Fila de tarefas prontas para execução
         self.fila_prontos: List[Task] = []
+        # Quantum opcional associado a escalonadores preemptivos
+        self.quantum: Optional[int] = quantum
 
     def adicionar_tarefa(self, tarefa: Task):
         """
@@ -97,4 +99,59 @@ class PriorityPreemptiveScheduler(Scheduler):
         
         # Seleciona tarefa com menor valor de prioridade (maior prioridade)
         return min(tarefas_disponiveis, key=lambda t: t.prioridade)
+
+
+class SchedulerFactory:
+    """Factory para criação de escalonadores suportados.
+
+    A fábrica mantém um registro interno dos algoritmos disponíveis e garante
+    que todos sejam instanciados de forma consistente. O parâmetro ``quantum``
+    é encaminhado para o construtor do escalonador (quando aplicável),
+    permitindo suportar algoritmos time-sliced como Round Robin.
+
+    Para adicionar um novo algoritmo:
+
+    1. Implemente uma subclasse de :class:`Scheduler` com a lógica de seleção
+       em ``selecionar_proxima_tarefa``.
+    2. Registre a classe no dicionário ``_REGISTRO`` usando uma chave única
+       (preferencialmente em letras maiúsculas) e, se necessário, trate aliases.
+    3. Atualize, conforme apropriado, a documentação e a lista de algoritmos
+       válidos em módulos que façam parsing de configuração (ex.: ``ConfigParser``).
+    """
+
+    _REGISTRO: Dict[str, Type[Scheduler]] = {
+        "FIFO": FIFOScheduler,
+        "SRTF": SRTFScheduler,
+        "PRIORIDADE": PriorityPreemptiveScheduler,
+    }
+
+    @classmethod
+    def criar_scheduler(cls, nome_algoritmo: str, quantum: Optional[int] = None) -> Scheduler:
+        """Cria uma instância de escalonador com base no nome do algoritmo.
+
+        Args:
+            nome_algoritmo: Nome do algoritmo desejado (case-insensitive).
+            quantum: Quantum associado a algoritmos preemptivos (opcional).
+
+        Returns:
+            Instância concreta de :class:`Scheduler`.
+
+        Raises:
+            ValueError: Se o nome informado não estiver registrado.
+        """
+
+        if not nome_algoritmo:
+            raise ValueError("Nome de algoritmo não pode ser vazio")
+
+        chave = nome_algoritmo.strip().upper()
+        scheduler_cls = cls._REGISTRO.get(chave)
+
+        if scheduler_cls is None:
+            algoritmos_suportados = ", ".join(sorted(cls._REGISTRO.keys()))
+            raise ValueError(
+                f"Algoritmo '{nome_algoritmo}' não suportado. "
+                f"Válidos: {algoritmos_suportados}."
+            )
+
+        return scheduler_cls(quantum=quantum)
 
