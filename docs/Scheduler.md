@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O módulo define a estrutura base para todos os algoritmos de escalonamento do sistema operacional. Ele introduz a classe abstrata `Scheduler`, que estabelece a interface para gerenciamento da fila de tarefas prontas e a seleção da próxima tarefa a ser executada. O módulo também inclui implementações concretas para algoritmos clássicos (**FIFO**, **SRTF** e **Prioridade Preemptivo**) e uma `SchedulerFactory` que centraliza a criação desses escalonadores.
+O módulo define a estrutura base para todos os algoritmos de escalonamento do sistema operacional. Ele introduz a classe abstrata `Scheduler`, que estabelece a interface para gerenciamento da fila de tarefas prontas e a seleção da próxima tarefa a ser executada. O módulo também inclui uma implementação concreta, o `FIFOScheduler`.
 
 ---
 
@@ -10,7 +10,8 @@ O módulo define a estrutura base para todos os algoritmos de escalonamento do s
 
 - **Escalonador (`Scheduler`)**: Classe base abstrata para algoritmos de escalonamento.
 - **Fila de Prontos (`fila_prontos`)**: Lista de tarefas que estão no estado PRONTO e aguardam execução.
-- **Tarefa (`Task`)**: Entidade que representa um processo no sistema (assumidamente do módulo `src.task`).
+- **Tarefa (`Task`)**: Entidade que representa um processo no sistema (do módulo `src.task`).
+- **Quantum**: Período máximo de tempo que uma tarefa pode executar antes de ser preemptada (usado em algoritmos preemptivos).
 
 ---
 
@@ -21,13 +22,16 @@ Classe base que define a interface comum para todos os escalonadores.
 ### Atributos
 
 - `fila_prontos` (`List[Task]`): Lista de tarefas prontas para execução.
-- `quantum` (`Optional[int]`): Quantum associado a algoritmos preemptivos (padrão `None`).
+- `quantum` (`Optional[int]`): Quantum associado a escalonadores preemptivos (opcional).
 
 ### Métodos
 
 #### `__init__(self, quantum: Optional[int] = None)`
 
-Inicializa o escalonador com uma fila de prontos vazia e, opcionalmente, configura um quantum.
+Inicializa o escalonador com uma fila de prontos vazia e quantum opcional.
+
+**Parâmetros:**
+- `quantum` (`Optional[int]`): Quantum para algoritmos preemptivos (opcional).
 
 **Retorna:**
 - `None`
@@ -92,43 +96,95 @@ Implementa a lógica FIFO. Procura a primeira tarefa na `fila_prontos` que estej
 
 ## Classe `SRTFScheduler`
 
-Implementa o algoritmo preemptivo **Shortest Remaining Time First**.
+Implementa o algoritmo de escalonamento SRTF (Shortest Remaining Time First), também conhecido como SRTF preemptivo.
 
 ### Métodos
 
 #### `selecionar_proxima_tarefa(self) -> Optional[Task]`
 
-Seleciona a tarefa com menor `tempo_restante` entre as que estão em estado `PRONTO` ou `EXECUTANDO`. Caso nenhuma esteja disponível, retorna `None`.
+Implementa a lógica SRTF. Seleciona a tarefa com menor tempo restante de execução dentre as tarefas disponíveis (PRONTO ou EXECUTANDO).
+
+**Nota:** Este algoritmo é preemptivo - quando chega uma tarefa com menor tempo restante, ela pode preemptar a tarefa em execução.
+
+**Retorna:**
+- `Optional[Task]`: A tarefa com menor `tempo_restante` ou `None` se não houver tarefas disponíveis.
+
+**Lógica:**
+1. Filtra tarefas com estado `TaskState.PRONTO` ou `TaskState.EXECUTANDO`.
+2. Seleciona a tarefa com menor valor de `tempo_restante` usando `min()`.
+3. Retorna `None` se não houver tarefas disponíveis.
 
 ---
 
 ## Classe `PriorityPreemptiveScheduler`
 
-Implementa o escalonamento por **Prioridade Preemptivo**, onde o menor valor numérico indica maior prioridade.
+Implementa o algoritmo de escalonamento por Prioridade Preemptivo.
 
 ### Métodos
 
 #### `selecionar_proxima_tarefa(self) -> Optional[Task]`
 
-Seleciona a tarefa com menor atributo `prioridade` entre as que estão em estado `PRONTO` ou `EXECUTANDO`. Retorna `None` se não houver tarefas elegíveis.
+Implementa a lógica de prioridade preemptiva. Seleciona a tarefa com maior prioridade (menor valor numérico de prioridade) dentre as tarefas disponíveis.
+
+**Nota:** Menor valor de prioridade = maior prioridade. Por exemplo, uma tarefa com `prioridade=0` tem maior prioridade que uma com `prioridade=1`.
+
+**Retorna:**
+- `Optional[Task]`: A tarefa com menor valor de `prioridade` ou `None` se não houver tarefas disponíveis.
+
+**Lógica:**
+1. Filtra tarefas com estado `TaskState.PRONTO` ou `TaskState.EXECUTANDO`.
+2. Seleciona a tarefa com menor valor de `prioridade` usando `min()`.
+3. Retorna `None` se não houver tarefas disponíveis.
 
 ---
 
 ## Classe `SchedulerFactory`
 
-A factory centraliza a criação dos escalonadores suportados. Ela expõe o método `criar_scheduler(nome_algoritmo, quantum)` que recebe o nome do algoritmo (case-insensitive) e devolve uma instância do escalonador correspondente. O quantum é encaminhado para o construtor do escalonador e pode ser utilizado por algoritmos que necessitam de fatia de tempo .
+Factory para criação de escalonadores suportados. Centraliza a criação de instâncias de escalonadores, garantindo consistência e facilitando a adição de novos algoritmos.
 
-### Como a factory funciona
+### Métodos
 
-- Mantém um dicionário interno que associa nomes de algoritmos (`FIFO`, `SRTF`, `PRIORIDADE`) às classes concretas.
-- Normaliza o nome recebido para maiúsculas antes de fazer a busca.
-- Lança `ValueError` se o algoritmo solicitado não estiver registrado, listando as opções válidas.
+#### `criar_scheduler(cls, nome_algoritmo: str, quantum: Optional[int] = None) -> Scheduler`
 
-### Adicionando um novo algoritmo
+Cria uma instância de escalonador com base no nome do algoritmo.
 
-1. **Crie a classe**: implemente uma nova subclasse de `Scheduler`, definindo `selecionar_proxima_tarefa` e, se necessário, comportamento adicional.
-2. **Registre na factory**: adicione a classe ao dicionário `_REGISTRO` em `SchedulerFactory`, usando uma chave única. Esse é o ponto central utilizado pelas demais camadas do sistema.
-3. **Atualize o parser/configuração**: inclua o novo nome em `ConfigParser.ALGORITMOS_VALIDOS` (e em outros pontos que validem a entrada do usuário).
-4. **Documente**: atualize este arquivo e demais docs relevantes para refletir o novo algoritmo.
+**Parâmetros:**
+- `nome_algoritmo` (`str`): Nome do algoritmo desejado (case-insensitive). Valores válidos: `'FIFO'`, `'SRTF'`, `'PRIORIDADE'`.
+- `quantum` (`Optional[int]`): Quantum associado a algoritmos preemptivos (opcional).
 
+**Retorna:**
+- `Scheduler`: Instância concreta de escalonador.
+
+**Exceções:**
+- `ValueError`: Se o nome do algoritmo não for suportado ou se estiver vazio.
+
+**Exemplo de Uso:**
+```python
+from src.scheduler import SchedulerFactory
+
+# Criar escalonador FIFO
+scheduler_fifo = SchedulerFactory.criar_scheduler("FIFO")
+
+# Criar escalonador SRTF com quantum
+scheduler_srtf = SchedulerFactory.criar_scheduler("SRTF", quantum=2)
+
+# Criar escalonador por Prioridade
+scheduler_prio = SchedulerFactory.criar_scheduler("PRIORIDADE", quantum=1)
+```
+
+### Algoritmos Suportados
+
+| Nome | Classe | Descrição | Preemptivo |
+|------|--------|-----------|------------|
+| `FIFO` | `FIFOScheduler` | First In, First Out | Não |
+| `SRTF` | `SRTFScheduler` | Shortest Remaining Time First | Sim |
+| `PRIORIDADE` | `PriorityPreemptiveScheduler` | Escalonamento por Prioridade | Sim |
+
+### Como Adicionar Novos Algoritmos
+
+Para adicionar um novo algoritmo de escalonamento:
+
+1. Crie uma subclasse de `Scheduler` implementando `selecionar_proxima_tarefa()`.
+2. Registre a classe no dicionário `_REGISTRO` da `SchedulerFactory`.
+3. Atualize a documentação e a lista `ALGORITMOS_VALIDOS` no `ConfigParser`.
 
