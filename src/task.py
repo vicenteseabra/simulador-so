@@ -69,7 +69,7 @@ class Task:
         # Verifica finalização
         if self.tempo_restante == 0:
             self.estado = TaskState.TERMINADO
-            self.tempo_fim = tempo_atual
+            self.tempo_fim = tempo_atual + 1  # Tempo após completar execução
             return True
             
         return False

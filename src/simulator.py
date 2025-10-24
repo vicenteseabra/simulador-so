@@ -71,7 +71,7 @@ class Simulator:
         
         if tarefa:
             if tarefa.estado == TaskState.PRONTO:
-                tarefa.iniciar_execucao(tempo_atual)
+                tarefa.iniciar()
 
             tarefa.executar(tempo_atual)
             self.historico_execucao.append((tempo_atual, tarefa.id))

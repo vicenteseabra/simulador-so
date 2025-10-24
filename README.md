@@ -1,6 +1,6 @@
-﻿# Simulador de Sistema Operacional Multitarefa
+﻿# Simulador de Sistema Operacional
 
-Simulador de SO com escalonamento de tarefas e visualização gráfica.
+Simulador de escalonamento de processos com suporte a múltiplos algoritmos e análise de métricas de desempenho.
 
 ## 👥 Equipe
 - Vicente Seabra
@@ -8,114 +8,73 @@ Simulador de SO com escalonamento de tarefas e visualização gráfica.
 
 ## 📋 Requisitos
 - Python 3.8+
-- Nenhuma biblioteca externa necessária
 
-## 🚀 Como Executar
-
-
-
-## 📁 Estrutura do Projeto
-```
-simulador-so/
-├── src/              # Código fonte
-│   ├── task.py           # Classes Task e TCB ✓
-│   ├── config_parser.py  # Parser de configuração ✓
-│   ├── scheduler.py      # Algoritmos de escalonamento
-│   ├── simulator.py      # Simulador principal
-│   ├── clock.py          # Relógio do sistema
-│   └── gantt.py          # Geração de diagramas
-├── tests/            # Testes unitários
-│   ├── test_scheduler.py        # Testes das estruturas ✓
-│   └── test_config_parser.py    # Testes do parser ✓
-├── examples/         # Exemplos de configuração
-│   ├── config_fifo.txt          # Exemplo FIFO ✓
-│   ├── config_prioridade.txt    # Exemplo Prioridade ✓
-│   ├── config_srtf.txt          # Exemplo SRTF ✓
-│   └── exemplo_config_parser.py # Demonstração do parser ✓
-├── output/           # Gráficos gerados
-├── docs/             # Documentação
-│   ├── estruturas-dados.md  # Doc das estruturas ✓
-│   └── config-parser.md     # Doc do parser ✓
-└── README.md
-```
-
-## 🔧 Algoritmos Implementados
-- [ ] FIFO (First In First Out)
-- [ ] SJF (Shortest Job First)
-- [ ] SRTF (Shortest Remaining Time First)
-- [ ] Prioridade Preemptivo
-- [ ] Round Robin (RR)
-
-## 📊 Formato do Arquivo de Configuração
-
-### Estrutura
-```
-ALGORITMO;QUANTUM
-ID;COR;INGRESSO;DURACAO;PRIORIDADE;
-ID;COR;INGRESSO;DURACAO;PRIORIDADE;
-...
-```
-
-### Exemplo
-```
-FIFO;2
-1;#FF0000;0;5;1;
-2;#00FF00;2;3;1;
-3;#0000FF;4;4;1;
-```
-
-**Para mais detalhes, consulte:** [`docs/config-parser.md`](docs/config-parser.md)
-
-## 💻 Como Usar o Parser
+## 🚀 Como Usar
 
 ```python
 from src.config_parser import ConfigParser
+from src.scheduler import SchedulerFactory
+from src.simulator import Simulator
 
-# Parse do arquivo de configuração
+# Carregar configuração
 parser = ConfigParser()
 config, tasks = parser.parse_file('examples/config_fifo.txt')
 
-# Exibe informações
-print(f"Algoritmo: {config['algoritmo']}")
-print(f"Tarefas: {len(tasks)}")
+# Criar e executar simulação
+scheduler = SchedulerFactory.criar_scheduler(config['algoritmo'], quantum=config['quantum'])
+sim = Simulator(scheduler)
+sim.carregar_tarefas(tasks)
+historico = sim.executar()
 
-# Obtém resumo
-resumo = parser.obter_resumo()
-print(resumo)
+# Obter métricas
+for task in tasks:
+    print(task.calcular_metricas())
 ```
 
 
-## 📝 Status do Desenvolvimento
 
-### ✅ Completado
-- [x] **Task 1.1** - Estruturas de Dados (Task, TCB)
-- [x] **Task 1.2** - Parser de Configuração
-  - Parser completo com validações
-  - 29 testes unitários (100% sucesso)
-  - Documentação detalhada
-  - Exemplos práticos
+## � Algoritmos de Escalonamento
 
-### 🚧 Em Desenvolvimento
-- [ ] Algoritmos de escalonamento
-- [ ] Simulador principal
-- [ ] Modos de execução
-- [ ] Visualização gráfica (Diagramas de Gantt)
+- ✅ **FIFO** (First In First Out)
+- ✅ **SRTF** (Shortest Remaining Time First - Preemptivo)
+- ✅ **Prioridade** (Preemptivo)
 
-## 🧪 Executar Testes
+## 📊 Formato de Configuração
 
-```powershell
-# Testes das estruturas de dados
-python tests/test_scheduler.py
+```
+ALGORITMO;QUANTUM
+ID;COR;INGRESSO;DURACAO;PRIORIDADE;EVENTOS
+```
 
-# Testes do parser de configuração
-python tests/test_config_parser.py
+**Exemplo:**
+```
+FIFO;2
+t01;#FF0000;0;5;1;
+t02;#00FF00;2;3;1;
+t03;#0000FF;4;4;1;E/S(2,1)
+```
 
-# Todos os testes
-python tests/test_scheduler.py; python tests/test_config_parser.py
+## 📈 Métricas Calculadas
+
+- **Turnaround Time** - Tempo total no sistema
+- **Waiting Time** - Tempo em espera
+- **Response Time** - Tempo até primeira execução
+
+## 🧪 Testes
+
+```bash
+# Verificação completa do sistema
+python verificar_compatibilidade.py
+
+# Testes de funcionalidade
+python teste_completo.py
 ```
 
 ## 📚 Documentação
 
-- **[Estruturas de Dados](docs/estruturas-dados.md)** - Classes Task e TCB
-- **[Config Parser](docs/config-parser.md)** - Parser de arquivos de configuração
+- [Task](docs/Task.md) - Estrutura de processos
+- [Simulator](docs/Simulator.md) - Simulador principal
+- [Scheduler](docs/Scheduler.md) - Algoritmos de escalonamento
+- [ConfigParser](docs/config-parser.md) - Formato de arquivos
+- [Clock](docs/Clock.md) - Gerenciamento de tempo
 
