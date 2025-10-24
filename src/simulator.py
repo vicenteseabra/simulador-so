@@ -1,3 +1,4 @@
+import time
 from src.clock import Clock
 from src.task import TCB, TaskState
 
@@ -100,3 +101,29 @@ class Simulator:
         if log:
             print("Simulação encerrada.")
         return self.historico_execucao
+    
+    def executar_completo(self):
+        """
+        Executa a simulação completa (sem logs) e retorna estatísticas finais.
+        Implementação da TASK 2.3.
+        """
+        start_time = time.time()
+        
+        self.clock.reset()
+
+        while self.tem_tarefas_pendentes():
+            self.executar_tick()
+
+        end_time = time.time()
+        
+        tempo_execucao_real_ms = (end_time - start_time) * 1000
+        tempo_total_ticks = self.clock.get_tempo()
+
+        estatisticas = {
+            'tempo_total': tempo_total_ticks,
+            'tempo_total_ticks': tempo_total_ticks,
+            'tempo_execucao_real_ms': tempo_execucao_real_ms,
+            'historico_execucao': self.historico_execucao
+        }
+
+        return estatisticas

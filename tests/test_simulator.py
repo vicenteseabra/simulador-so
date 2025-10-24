@@ -30,6 +30,31 @@ def test_fifo_simulador():
         for linha in t.obter_historico_resumido():
             print(linha)
 
+def test_execucao_completa_task_2_3():
+    """
+    Teste específico para a Task 2.3, usando o novo método
+    executar_completo() e o teste manual da sua captura de tela.
+    """
+    print("\n--- Teste Task 2.3: executar_completo() ---")
+    
+    scheduler = FIFOScheduler()
+    sim = Simulator(scheduler)
+    
+    t1 = TCB("T1", "azul", ingresso=0, duracao=3)
+    t2 = TCB("T2", "verde", ingresso=3, duracao=2)
+    t3 = TCB("T3", "vermelho", ingresso=5, duracao=4)
+    
+    sim.carregar_tarefas([t1, t2, t3])
+
+    resultado = sim.executar_completo()
+
+    print(f"Simulação concluída em {resultado['tempo_total']} ticks")
+    print(f"Tempo de execução real: {resultado['tempo_execucao_real_ms']:.2f} ms")
+    
+    print("\nHistórico de execução final:")
+    print(resultado['historico_execucao'])
+
 # Executa o teste
 if __name__ == "__main__":
     test_fifo_simulador()
+    test_execucao_completa_task_2_3()
