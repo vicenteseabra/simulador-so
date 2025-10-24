@@ -63,9 +63,6 @@ t03;#0000FF;4;4;1;E/S(2,1)
 ## 🧪 Testes
 
 ```bash
-# Verificação completa do sistema
-python verificar_compatibilidade.py
-
 # Testes de funcionalidade
 python teste_completo.py
 ```
