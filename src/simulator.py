@@ -1,6 +1,6 @@
 import time
 from src.clock import Clock
-from src.task import TCB, TaskState
+from src.task import Task, TaskState
 
 
 class Simulator:
@@ -67,17 +67,16 @@ class Simulator:
         
         # Se mudou de tarefa, pausa a anterior (preempção)
         if tarefa_executando and tarefa != tarefa_executando:
-            tarefa_executando.pausar()
+            tarefa_executando.preemptar()
         
         if tarefa:
             if tarefa.estado == TaskState.PRONTO:
                 tarefa.iniciar_execucao(tempo_atual)
 
-            tarefa.executar(1)
+            tarefa.executar(tempo_atual)
             self.historico_execucao.append((tempo_atual, tarefa.id))
 
             if tarefa.estado == TaskState.TERMINADO:
-                tarefa.finalizar(tempo_atual + 1)
                 self.scheduler.remover_tarefa(tarefa)
         else:
             # Nenhuma tarefa disponível (CPU ociosa)

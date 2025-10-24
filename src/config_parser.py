@@ -10,11 +10,9 @@ Eventos suportados:
     - ML:tempo (ex: ML:1)
     - MU:tempo (ex: MU:3)
 """
-
-
+from src.task import Task
 class ConfigParser:
     """Parser para arquivos de configuração do simulador."""
-    
     ALGORITMOS_VALIDOS = ['FIFO', 'SRTF', 'PRIORIDADE']
     QUANTUM_PADRAO = 1
     PRIORIDADE_PADRAO = 0
@@ -28,19 +26,15 @@ class ConfigParser:
     def parse_file(self, filename):
         """
         Faz o parsing de um arquivo de configuração.
-        
         Args:
             filename (str): Caminho do arquivo
-            
         Returns:
             tuple: (config_dict, task_list)
-                
         Raises:
             FileNotFoundError: Se o arquivo não existir
             ValueError: Se o formato for inválido
         """
         self._resetar()
-        
         # Lê arquivo
         try:
             with open(filename, 'r', encoding='utf-8-sig') as f:
@@ -84,7 +78,6 @@ class ConfigParser:
     def _parse_config(self, linha):
         """Parse da linha de configuração: ALGORITMO;QUANTUM"""
         partes = linha.split(';')
-        
         # Algoritmo
         algoritmo = partes[0].strip().upper()
         if algoritmo not in self.ALGORITMOS_VALIDOS:
@@ -110,7 +103,6 @@ class ConfigParser:
     def _parse_task(self, linha, num_linha):
         """Parse de uma linha de tarefa: ID;COR;INGRESSO;DURACAO;PRIORIDADE;EVENTOS"""
         partes = [p.strip() for p in linha.split(';')]
-        
         # Remove último se vazio (por causa do ; final)
         if partes and not partes[-1]:
             partes.pop()
@@ -120,27 +112,22 @@ class ConfigParser:
                 f"Linha {num_linha}: formato inválido. "
                 "Esperado: ID;COR;INGRESSO;DURACAO;PRIORIDADE;EVENTOS"
             )
-        
         try:
             # Campos obrigatórios
             task_id = partes[0]
             cor = partes[1] if partes[1] else self.COR_PADRAO
             ingresso = int(partes[2])
             duracao = int(partes[3])
-            
-            # Validações básicas
             if not task_id:
                 raise ValueError("ID vazio")
             if ingresso < 0:
                 raise ValueError("Ingresso deve ser >= 0")
             if duracao <= 0:
                 raise ValueError("Duração deve ser > 0")
-            
             # Prioridade (opcional)
             prioridade = self.PRIORIDADE_PADRAO
             if len(partes) >= 5 and partes[4]:
                 prioridade = int(partes[4])
-            
             # Eventos (opcional)
             eventos = []
             if len(partes) >= 6:
@@ -148,9 +135,7 @@ class ConfigParser:
                 eventos_str = ';'.join(partes[5:])
                 if eventos_str:
                     eventos = self._parse_eventos(eventos_str)
-            
             # Cria tarefa
-            from task import Task
             task = Task(task_id, cor, ingresso, duracao, prioridade, eventos)
             self.tasks.append(task)
             
@@ -165,13 +150,11 @@ class ConfigParser:
             list: Lista de dicts com eventos parseados
         """
         eventos = []
-        
         # Separa por ; (eventos múltiplos)
         for evento_str in eventos_str.split(';'):
             evento_str = evento_str.strip()
             if not evento_str:
                 continue
-            
             try:
                 # IO:tempo-duracao
                 if evento_str.startswith('IO:'):
@@ -179,20 +162,16 @@ class ConfigParser:
                     if len(params) != 2:
                         self.avisos.append(f"Evento IO mal formatado: {evento_str}")
                         continue
-                    
                     tempo = int(params[0])
                     duracao = int(params[1])
-                    
                     if tempo < 0 or duracao < 0:
                         self.avisos.append(f"Evento IO com valores negativos: {evento_str}")
                         continue
-                    
                     eventos.append({
                         'tipo': 'IO',
                         'tempo': tempo,
                         'duracao': duracao
                     })
-                
                 # ML:tempo (Mutex Lock)
                 elif evento_str.startswith('ML:'):
                     tempo = int(evento_str[3:])
@@ -204,19 +183,16 @@ class ConfigParser:
                         'tipo': 'ML',
                         'tempo': tempo
                     })
-                
                 # MU:tempo (Mutex Unlock)
                 elif evento_str.startswith('MU:'):
                     tempo = int(evento_str[3:])
                     if tempo < 0:
                         self.avisos.append(f"Evento MU com tempo negativo: {evento_str}")
                         continue
-                    
                     eventos.append({
                         'tipo': 'MU',
                         'tempo': tempo
                     })
-                
                 else:
                     self.avisos.append(f"Tipo de evento desconhecido: {evento_str}")
             
@@ -233,7 +209,6 @@ class ConfigParser:
         """Retorna resumo da configuração."""
         if not self.config or not self.tasks:
             return {'valido': False}
-        
         return {
             'valido': True,
             'algoritmo': self.config['algoritmo'],
@@ -242,8 +217,7 @@ class ConfigParser:
             'duracao_total': sum(t.duracao for t in self.tasks),
             'avisos': len(self.avisos)
         }
-
-
+    
 # Teste básico
 if __name__ == '__main__':
     print("=== Teste do ConfigParser ===\n")
