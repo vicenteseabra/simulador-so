@@ -1,4 +1,4 @@
-## Gantt - Documentação
+# Gantt - Documentação Completa
 
 ### Visão Geral
 O módulo define a classe `GanttChart`, responsável por armazenar e processar os dados de execução das tarefas. O objetivo desta estrutura é coletar os intervalos de execução (quando cada tarefa executou e por quanto tempo) e preparar os dados para renderização posterior em um gráfico de Gantt visual.
