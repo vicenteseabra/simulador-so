@@ -120,6 +120,70 @@ class GanttChart:
             'largura': largura_total,
             'altura': altura_total
         }
+
+    def exibir_terminal(self):
+        """
+        Exibe uma representação ASCII do gráfico de Gantt no terminal.
+        
+        - '█' (Bloco Cheio) representa tempo de execução.
+        - '░' (Bloco Leve) representa tempo de espera/ociosidade.
+        """
+        dados_por_tarefa = self.get_dados()
+        dimensoes = self.calcular_dimensoes()
+        tempo_total = dimensoes.get('largura', 0)
+
+        if tempo_total == 0 or not dados_por_tarefa:
+            print("Nenhum dado de execução para exibir.")
+            print("--- Fim do Gráfico ---")
+            return
+
+        CHAR_EXEC = '█'
+        CHAR_ESPERA = '░'
+
+        # Encontra o comprimento do ID mais longo para alinhamento
+        try:
+            max_id_len = max(len(task_id) for task_id in dados_por_tarefa.keys())
+        except ValueError:
+            max_id_len = 0 # Caso não haja tarefas
+
+        # 1. Exibir cada linha de tarefa
+        for task_id in sorted(dados_por_tarefa.keys()):
+            intervalos_exec = dados_por_tarefa[task_id]
+            
+            # Começa com uma linha cheia de 'espera'
+            linha_grafico = [CHAR_ESPERA] * tempo_total
+            
+            # Preenche os blocos de 'execução'
+            for intervalo in intervalos_exec:
+                inicio = intervalo['inicio']
+                fim = intervalo['fim']
+                # Preenche cada tick de tempo no intervalo
+                for i in range(inicio, fim):
+                    if i < tempo_total: # Garante que não ultrapasse o limite
+                        linha_grafico[i] = CHAR_EXEC
+            
+            # Formata e imprime a linha
+            label = f"  {task_id}:".ljust(max_id_len + 4) # Legenda
+            grafico_str = "".join(linha_grafico)
+            print(f"{label} [{grafico_str}]")
+
+        # 2. Exibir eixo de tempo
+        
+        # Padding para alinhar com o início do gráfico '['
+        padding_eixo = " " * (max_id_len + 6) 
+        
+        # Cria a string do eixo
+        eixo_str = ['-'] * tempo_total
+        
+        # Adiciona os números (ticks) de 5 em 5
+        for t in range(0, tempo_total, 5):
+            tick_label = str(t)
+            # Coloca o label no eixo, cuidando para não sobrepor
+            for i, char in enumerate(tick_label):
+                if (t + i) < tempo_total:
+                    eixo_str[t + i] = char
+
+        print(f"{padding_eixo}{''.join(eixo_str)}")
     
     def exportar_svg(self, filename: str):
         """
