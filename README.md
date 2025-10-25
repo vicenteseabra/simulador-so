@@ -99,6 +99,38 @@ python examples/teste_interativo.py
 
 **Para mais detalhes, consulte:** [`docs/passo-a-passo.md`](docs/passo-a-passo.md)
 
+## 📊 Exportação de Diagramas de Gantt
+
+Gere diagramas de Gantt em formato SVG para visualizar a execução:
+
+```python
+from src.gantt import GanttChart
+
+# Criar diagrama
+gantt = GanttChart()
+gantt.adicionar_intervalo('T1', 0, 3, '#FF0000')
+gantt.adicionar_intervalo('T2', 3, 6, '#00FF00')
+
+# Exportar para SVG
+filepath = gantt.exportar_svg('meu_diagrama.svg')
+print(f"SVG salvo em: {filepath}")
+```
+
+### Recursos
+- ✅ Geração SVG usando apenas strings (sem bibliotecas externas)
+- ✅ Grid de referência
+- ✅ Eixo de tempo
+- ✅ Labels das tarefas
+- ✅ Legenda com cores
+- ✅ Suporte a preempção (intervalos não-consecutivos)
+
+### Demonstração
+```bash
+python examples/demo_svg_export.py
+```
+
+Arquivos SVG são salvos em `output/` e podem ser abertos em qualquer navegador.
+
 
 ## 📝 Status do Desenvolvimento
 
@@ -114,12 +146,17 @@ python examples/teste_interativo.py
   - Comandos para inspeção de estado
   - 14 testes unitários (100% sucesso)
   - Documentação completa em [`docs/passo-a-passo.md`](docs/passo-a-passo.md)
+- [x] **Task 2.7** - Exportação para SVG
+  - Geração de diagramas de Gantt em SVG
+  - Apenas strings Python (sem bibliotecas externas)
+  - 12 testes unitários (100% sucesso)
+  - Grid, eixo de tempo, labels e legenda
 
 ### 🚧 Em Desenvolvimento
 - [x] Algoritmos de escalonamento
 - [x] Simulador principal
-- [ ] Modos de execução
-- [ ] Visualização gráfica (Diagramas de Gantt)
+- [x] Visualização gráfica (Diagramas de Gantt)
+- [ ] Modos de execução adicionais
 
 ## 🧪 Executar Testes
 
@@ -136,4 +173,5 @@ python teste_completo.py
 - [ConfigParser](docs/config-parser.md) - Formato de arquivos
 - [Clock](docs/Clock.md) - Gerenciamento de tempo
 - [Passo-a-Passo](docs/passo-a-passo.md) - Modo debugger interativo
+- [Gantt](docs/gantt.md) - Diagramas de Gantt e exportação SVG
 
