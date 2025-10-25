@@ -20,9 +20,9 @@ Simulador de SO com escalonamento de tarefas e visualização gráfica.
 ```
 
 ## 🔧 Algoritmos Implementados
-- [ ] FIFO (First In First Out)
-- [ ] SRTF (Shortest Remaining Time First)
-- [ ] Prioridade Preemptivo
+- [x] FIFO (First In First Out)
+- [x] SRTF (Shortest Remaining Time First)
+- [x] Prioridade Preemptivo
 
 ## 📊 Formato do Arquivo de Configuração
 
