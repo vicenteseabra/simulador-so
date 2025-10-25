@@ -1,15 +1,25 @@
+# src/main.py
+
 import argparse
 import sys
 import os
 from typing import List, Dict, Any, Tuple
 
+# --- Bloco de Importação Robusto ---
+# Adiciona o diretório raiz do projeto (o pai de 'src') ao sys.path
+# Isso permite que o script seja executado de duas formas:
+# 1. Como um módulo (python -m src.main ...)
+# 2. Como um script direto (python src/main.py ...)
 try:
+    # Tenta importar como se 'src' fosse um pacote (execução como módulo)
     from src.config_parser import ConfigParser
     from src.scheduler import SchedulerFactory
     from src.simulator import Simulator
     from src.gantt import GanttChart
     from src.task import Task
 except ImportError:
+    # Se falhar, é provável que esteja sendo executado como script direto.
+    # Adicionamos o diretório pai ao path.
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     try:
         from src.config_parser import ConfigParser
@@ -22,6 +32,8 @@ except ImportError:
         print("Certifique-se de que todos os arquivos .py (task.py, scheduler.py, etc.) "
               "estejam no mesmo diretório 'src'.", file=sys.stderr)
         sys.exit(1)
+# --- Fim do Bloco de Importação ---
+
 
 def configurar_argumentos() -> argparse.Namespace:
     """
@@ -54,35 +66,44 @@ def configurar_argumentos() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def popular_gantt_chart(historico: List[Tuple[int, str]], tasks: List[Task], tempo_total: int) -> GanttChart:
+def popular_gantt_chart(historico: List[Tuple[int, str]], tasks: List[Task]) -> GanttChart:
     """
     Processa o histórico de execução e o insere no objeto GanttChart.
+    (Lógica corrigida baseada no script de demonstração)
     """
     gantt = GanttChart()
+    
+    # Cria mapa de task_id -> cor
+    cores = {task.id: task.cor for task in tasks}
+    
+    # Agrupa execuções consecutivas
     if not historico:
         return gantt
-
-    # Mapeia IDs para tarefas para buscar a cor
-    tarefas_map = {t.id: t for t in tasks}
     
-    start_tick = -1
-    current_task_id = None
+    inicio_intervalo = historico[0][0]
+    task_atual = historico[0][1]
     
-    # Adiciona um "sentinela" ao final para garantir que o último bloco seja processado
-    hist_com_sentinela = historico + [(tempo_total, 'SENTINEL_END')]
-
-    for tempo, task_id in hist_com_sentinela:
-        if task_id != current_task_id:
-            # Um bloco de execução (current_task_id) terminou no 'tempo' atual
-            if current_task_id is not None and current_task_id in tarefas_map:
-                cor = tarefas_map[current_task_id].cor
-                # Adiciona o intervalo [start_tick, tempo)
-                gantt.adicionar_intervalo(current_task_id, start_tick, tempo, cor)
+    for i in range(1, len(historico)):
+        tempo, task_id = historico[i]
+        
+        # Se mudou de tarefa
+        if task_id != task_atual:
+            # Fecha intervalo anterior
+            if task_atual is not None:  # Ignora períodos IDLE (ociosidade)
+                cor = cores.get(task_atual, '#CCCCCC') # Usa cinza se não achar
+                gantt.adicionar_intervalo(task_atual, inicio_intervalo, tempo, cor)
             
-            # Novo bloco se inicia
-            current_task_id = task_id
-            start_tick = tempo
-            
+            # Inicia novo intervalo
+            inicio_intervalo = tempo
+            task_atual = task_id
+    
+    # Fecha último intervalo
+    if task_atual is not None:
+        # O tempo final é o tick do último evento + 1
+        tempo_final = historico[-1][0] + 1
+        cor = cores.get(task_atual, '#CCCCCC')
+        gantt.adicionar_intervalo(task_atual, inicio_intervalo, tempo_final, cor)
+    
     return gantt
 
 
@@ -189,8 +210,7 @@ def main(args: argparse.Namespace):
     print("\n6. Gerando gráfico de Gantt...")
     gantt = popular_gantt_chart(
         resultados['historico_execucao'], 
-        simulator.tasks, 
-        resultados['tempo_total_ticks']
+        simulator.tasks
     )
     
     # Exibe no terminal
@@ -215,6 +235,8 @@ def main(args: argparse.Namespace):
 
     print("\nExecução finalizada.")
 
+
+# --- Ponto de Entrada Principal ---
 if __name__ == "__main__":
     args = None
     try:
@@ -237,4 +259,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nERRO INESPERADO: {e.__class__.__name__}", file=sys.stderr)
         print(f"Detalhe: {e}", file=sys.stderr)
+        # Em caso de erro, exibir o traceback pode ser útil para debug
+        # import traceback
+        # traceback.print_exc()
         sys.exit(1)
