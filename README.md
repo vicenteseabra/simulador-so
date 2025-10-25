@@ -8,8 +8,43 @@ Simulador de escalonamento de processos com suporte a múltiplos algoritmos e an
 
 ## 📋 Requisitos
 - Python 3.8+
+- Nenhuma biblioteca externa necessária
 
-## 🚀 Como Usar
+## 🚀 Como Executar
+
+
+
+## 📁 Estrutura do Projeto
+```
+
+```
+
+## 🔧 Algoritmos Implementados
+- [x] FIFO (First In First Out)
+- [x] SRTF (Shortest Remaining Time First)
+- [x] Prioridade Preemptivo
+
+## 📊 Formato do Arquivo de Configuração
+
+### Estrutura
+```
+ALGORITMO;QUANTUM
+ID;COR;INGRESSO;DURACAO;PRIORIDADE;
+ID;COR;INGRESSO;DURACAO;PRIORIDADE;
+...
+```
+
+### Exemplo
+```
+FIFO;2
+1;#FF0000;0;5;1;
+2;#00FF00;2;3;1;
+3;#0000FF;4;4;1;
+```
+
+**Para mais detalhes, consulte:** [`docs/config-parser.md`](docs/config-parser.md)
+
+## 💻 Como Usar o Parser
 
 ```python
 from src.config_parser import ConfigParser
@@ -32,35 +67,23 @@ for task in tasks:
 ```
 
 
+## 📝 Status do Desenvolvimento
 
-## � Algoritmos de Escalonamento
+### ✅ Completado
+- [x] **Task 1.1** - Estruturas de Dados (Task, TCB)
+- [x] **Task 1.2** - Parser de Configuração
+  - Parser completo com validações
+  - 29 testes unitários (100% sucesso)
+  - Documentação detalhada
+  - Exemplos práticos
 
-- ✅ **FIFO** (First In First Out)
-- ✅ **SRTF** (Shortest Remaining Time First - Preemptivo)
-- ✅ **Prioridade** (Preemptivo)
+### 🚧 Em Desenvolvimento
+- [x] Algoritmos de escalonamento
+- [ ] Simulador principal
+- [ ] Modos de execução
+- [ ] Visualização gráfica (Diagramas de Gantt)
 
-## 📊 Formato de Configuração
-
-```
-ALGORITMO;QUANTUM
-ID;COR;INGRESSO;DURACAO;PRIORIDADE;EVENTOS
-```
-
-**Exemplo:**
-```
-FIFO;2
-t01;#FF0000;0;5;1;
-t02;#00FF00;2;3;1;
-t03;#0000FF;4;4;1;E/S(2,1)
-```
-
-## 📈 Métricas Calculadas
-
-- **Turnaround Time** - Tempo total no sistema
-- **Waiting Time** - Tempo em espera
-- **Response Time** - Tempo até primeira execução
-
-## 🧪 Testes
+## 🧪 Executar Testes
 
 ```bash
 # Testes de funcionalidade
