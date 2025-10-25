@@ -41,10 +41,8 @@ simulador-so/
 
 ## 🔧 Algoritmos Implementados
 - [ ] FIFO (First In First Out)
-- [ ] SJF (Shortest Job First)
 - [ ] SRTF (Shortest Remaining Time First)
 - [ ] Prioridade Preemptivo
-- [ ] Round Robin (RR)
 
 ## 📊 Formato do Arquivo de Configuração
 
@@ -96,7 +94,7 @@ print(resumo)
   - Exemplos práticos
 
 ### 🚧 Em Desenvolvimento
-- [ ] Algoritmos de escalonamento
+- [x] Algoritmos de escalonamento
 - [ ] Simulador principal
 - [ ] Modos de execução
 - [ ] Visualização gráfica (Diagramas de Gantt)
