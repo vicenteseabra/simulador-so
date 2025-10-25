@@ -1,25 +1,15 @@
-# src/main.py
-
 import argparse
 import sys
 import os
 from typing import List, Dict, Any, Tuple
 
-# --- Bloco de Importação Robusto ---
-# Adiciona o diretório raiz do projeto (o pai de 'src') ao sys.path
-# Isso permite que o script seja executado de duas formas:
-# 1. Como um módulo (python -m src.main ...)
-# 2. Como um script direto (python src/main.py ...)
 try:
-    # Tenta importar como se 'src' fosse um pacote (execução como módulo)
     from src.config_parser import ConfigParser
     from src.scheduler import SchedulerFactory
     from src.simulator import Simulator
     from src.gantt import GanttChart
     from src.task import Task
 except ImportError:
-    # Se falhar, é provável que esteja sendo executado como script direto.
-    # Adicionamos o diretório pai ao path.
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     try:
         from src.config_parser import ConfigParser
@@ -32,7 +22,6 @@ except ImportError:
         print("Certifique-se de que todos os arquivos .py (task.py, scheduler.py, etc.) "
               "estejam no mesmo diretório 'src'.", file=sys.stderr)
         sys.exit(1)
-# --- Fim do Bloco de Importação ---
 
 
 def configurar_argumentos() -> argparse.Namespace:
@@ -218,7 +207,7 @@ def main(args: argparse.Namespace):
     gantt.exibir_terminal()
     print("--- Fim do Gráfico ---")
 
-    # Exporta SVG (opcional)
+    # Exporta SVG
     if args.output:
         try:
             # Garante que o diretório 'output' exista
@@ -236,7 +225,6 @@ def main(args: argparse.Namespace):
     print("\nExecução finalizada.")
 
 
-# --- Ponto de Entrada Principal ---
 if __name__ == "__main__":
     args = None
     try:
@@ -259,7 +247,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nERRO INESPERADO: {e.__class__.__name__}", file=sys.stderr)
         print(f"Detalhe: {e}", file=sys.stderr)
-        # Em caso de erro, exibir o traceback pode ser útil para debug
-        # import traceback
-        # traceback.print_exc()
         sys.exit(1)
