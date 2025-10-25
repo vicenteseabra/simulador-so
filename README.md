@@ -1,6 +1,6 @@
-﻿# Simulador de Sistema Operacional Multitarefa
+﻿# Simulador de Sistema Operacional
 
-Simulador de SO com escalonamento de tarefas e visualização gráfica.
+Simulador de escalonamento de processos com suporte a múltiplos algoritmos e análise de métricas de desempenho.
 
 ## 👥 Equipe
 - Vicente Seabra
@@ -48,18 +48,22 @@ FIFO;2
 
 ```python
 from src.config_parser import ConfigParser
+from src.scheduler import SchedulerFactory
+from src.simulator import Simulator
 
-# Parse do arquivo de configuração
+# Carregar configuração
 parser = ConfigParser()
 config, tasks = parser.parse_file('examples/config_fifo.txt')
 
-# Exibe informações
-print(f"Algoritmo: {config['algoritmo']}")
-print(f"Tarefas: {len(tasks)}")
+# Criar e executar simulação
+scheduler = SchedulerFactory.criar_scheduler(config['algoritmo'], quantum=config['quantum'])
+sim = Simulator(scheduler)
+sim.carregar_tarefas(tasks)
+historico = sim.executar()
 
-# Obtém resumo
-resumo = parser.obter_resumo()
-print(resumo)
+# Obter métricas
+for task in tasks:
+    print(task.calcular_metricas())
 ```
 
 
@@ -81,19 +85,16 @@ print(resumo)
 
 ## 🧪 Executar Testes
 
-```powershell
-# Testes das estruturas de dados
-python tests/test_scheduler.py
-
-# Testes do parser de configuração
-python tests/test_config_parser.py
-
-# Todos os testes
-python tests/test_scheduler.py; python tests/test_config_parser.py
+```bash
+# Testes de funcionalidade
+python teste_completo.py
 ```
 
 ## 📚 Documentação
 
-- **[Estruturas de Dados](docs/estruturas-dados.md)** - Classes Task e TCB
-- **[Config Parser](docs/config-parser.md)** - Parser de arquivos de configuração
+- [Task](docs/Task.md) - Estrutura de processos
+- [Simulator](docs/Simulator.md) - Simulador principal
+- [Scheduler](docs/Scheduler.md) - Algoritmos de escalonamento
+- [ConfigParser](docs/config-parser.md) - Formato de arquivos
+- [Clock](docs/Clock.md) - Gerenciamento de tempo
 
