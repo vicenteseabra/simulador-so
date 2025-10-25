@@ -16,27 +16,7 @@ Simulador de SO com escalonamento de tarefas e visualização gráfica.
 
 ## 📁 Estrutura do Projeto
 ```
-simulador-so/
-├── src/              # Código fonte
-│   ├── task.py           # Classes Task e TCB ✓
-│   ├── config_parser.py  # Parser de configuração ✓
-│   ├── scheduler.py      # Algoritmos de escalonamento
-│   ├── simulator.py      # Simulador principal
-│   ├── clock.py          # Relógio do sistema
-│   └── gantt.py          # Geração de diagramas
-├── tests/            # Testes unitários
-│   ├── test_scheduler.py        # Testes das estruturas ✓
-│   └── test_config_parser.py    # Testes do parser ✓
-├── examples/         # Exemplos de configuração
-│   ├── config_fifo.txt          # Exemplo FIFO ✓
-│   ├── config_prioridade.txt    # Exemplo Prioridade ✓
-│   ├── config_srtf.txt          # Exemplo SRTF ✓
-│   └── exemplo_config_parser.py # Demonstração do parser ✓
-├── output/           # Gráficos gerados
-├── docs/             # Documentação
-│   ├── estruturas-dados.md  # Doc das estruturas ✓
-│   └── config-parser.md     # Doc do parser ✓
-└── README.md
+
 ```
 
 ## 🔧 Algoritmos Implementados
