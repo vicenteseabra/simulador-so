@@ -125,9 +125,9 @@ def demo_prioridade():
     simulator = Simulator(scheduler)
     
     tasks = [
-        Task("T1", "#FF6B6B", ingresso=0, duracao=5, prioridade=3),  # Baixa
-        Task("T2", "#4ECDC4", ingresso=2, duracao=2, prioridade=1),  # Alta
-        Task("T3", "#45B7D1", ingresso=4, duracao=3, prioridade=2),  # Média
+        Task("T1", "#14B42F", ingresso=0, duracao=5, prioridade=3),  # Baixa
+        Task("T2", "#BCCD4E", ingresso=2, duracao=2, prioridade=1),  # Alta
+        Task("T3", "#AC16B9", ingresso=4, duracao=3, prioridade=2),  # Média
     ]
     
     simulator.carregar_tarefas(tasks)

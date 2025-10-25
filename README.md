@@ -117,7 +117,7 @@ print(f"SVG salvo em: {filepath}")
 ```
 
 ### Recursos
-- ✅ Geração SVG usando apenas strings (sem bibliotecas externas)
+- ✅ Geração SVG usando apenas strings
 - ✅ Grid de referência
 - ✅ Eixo de tempo
 - ✅ Labels das tarefas

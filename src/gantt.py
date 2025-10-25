@@ -120,7 +120,7 @@ class GanttChart:
             'largura': largura_total,
             'altura': altura_total
         }
-
+    
     def exportar_svg(self, filename: str):
         """
         Exporta diagrama de Gantt como SVG.
@@ -194,4 +194,90 @@ class GanttChart:
 
     def _titulo(self, w: int) -> str:
         """Título."""
-        return f'  <text x="{w/2}" y="30" text-anchor="middle"  
+        return f'  <text x="{w/2}" y="30" text-anchor="middle" class="title">Diagrama de Gantt</text>\n'
+
+    def _grid(self, m_esq: int, m_topo: int, tempo: int, n_tasks: int, l_tick: int, h_linha: int) -> str:
+        """Grid de referência."""
+        svg = '  <!-- Grid -->\n'
+        
+        # Verticais
+        for t in range(tempo + 1):
+            x = m_esq + (t * l_tick)
+            y1, y2 = m_topo, m_topo + (n_tasks * h_linha)
+            svg += f'  <line x1="{x}" y1="{y1}" x2="{x}" y2="{y2}" class="grid-line"/>\n'
+        
+        # Horizontais
+        for i in range(n_tasks + 1):
+            y = m_topo + (i * h_linha)
+            x1, x2 = m_esq, m_esq + (tempo * l_tick)
+            svg += f'  <line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" class="grid-line"/>\n'
+        
+        return svg
+
+    def _eixo_tempo(self, m_esq: int, m_topo: int, tempo: int, n_tasks: int, l_tick: int, h_linha: int) -> str:
+        """Eixo de tempo."""
+        svg = '  <!-- Eixo Tempo -->\n'
+        y_texto = m_topo + (n_tasks * h_linha) + 20
+        
+        for t in range(tempo + 1):
+            x = m_esq + (t * l_tick)
+            svg += f'  <text x="{x}" y="{y_texto}" text-anchor="middle" class="axis-label">{t}</text>\n'
+        
+        # Label
+        x_label = m_esq + (tempo * l_tick / 2)
+        y_label = y_texto + 25
+        svg += f'  <text x="{x_label}" y="{y_label}" text-anchor="middle" class="axis-label" font-weight="bold">Tempo (ticks)</text>\n'
+        
+        return svg
+
+    def _labels_tasks(self, dados: dict, m_esq: int, m_topo: int, h_linha: int) -> str:
+        """Labels das tarefas."""
+        svg = '  <!-- Labels Tarefas -->\n'
+        
+        for idx, task_id in enumerate(sorted(dados.keys(), reverse=True)):
+            y = m_topo + (idx * h_linha) + (h_linha / 2) + 5
+            x = m_esq - 10
+            svg += f'  <text x="{x}" y="{y}" text-anchor="end" class="task-label">{task_id}</text>\n'
+        
+        return svg
+
+    def _barras(self, dados: dict, m_esq: int, m_topo: int, l_tick: int, h_linha: int) -> str:
+        """Barras de execução."""
+        svg = '  <!-- Barras -->\n'
+        PAD = 4
+        
+        for idx, task_id in enumerate(sorted(dados.keys(), reverse=True)):
+            for intervalo in dados[task_id]:
+                x = m_esq + (intervalo['inicio'] * l_tick)
+                y = m_topo + (idx * h_linha) + PAD
+                w = (intervalo['fim'] - intervalo['inicio']) * l_tick
+                h = h_linha - (2 * PAD)
+                cor = intervalo['cor']
+                
+                svg += f'  <rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{cor}" stroke="#333" stroke-width="1" opacity="0.8"/>\n'
+                
+                # Label se couber
+                if w > 30:
+                    x_txt = x + (w / 2)
+                    y_txt = y + (h / 2) + 5
+                    svg += f'  <text x="{x_txt}" y="{y_txt}" text-anchor="middle" font-family="Arial" font-size="11px" fill="#FFF" font-weight="bold">{task_id}</text>\n'
+        
+        return svg
+
+    def _legenda(self, dados: dict, m_esq: int, m_topo: int, n_tasks: int, h_linha: int) -> str:
+        """Legenda."""
+        svg = '  <!-- Legenda -->\n'
+        y = m_topo + (n_tasks * h_linha) + 60
+        x = m_esq
+        
+        svg += f'  <text x="{x}" y="{y}" class="legend-text" font-weight="bold">Legenda:</text>\n'
+        
+        x_off = x + 60
+        for idx, task_id in enumerate(sorted(dados.keys())):
+            cor = dados[task_id][0]['cor']
+            x_item = x_off + (idx * 100)
+            
+            svg += f'  <rect x="{x_item}" y="{y-12}" width="15" height="15" fill="{cor}" stroke="#333" stroke-width="1"/>\n'
+            svg += f'  <text x="{x_item+20}" y="{y}" class="legend-text">{task_id}</text>\n'
+        
+        return svg
