@@ -66,6 +66,39 @@ for task in tasks:
     print(task.calcular_metricas())
 ```
 
+## 🐛 Modo Passo-a-Passo (Debugger)
+
+Execute a simulação de forma interativa para debug e aprendizado:
+
+```python
+from src.simulator import Simulator
+from src.scheduler import FIFOScheduler
+from src.task import Task
+
+# Configurar simulador
+scheduler = FIFOScheduler()
+simulator = Simulator(scheduler)
+tasks = [Task("T1", "#FF0000", ingresso=0, duracao=3, prioridade=1)]
+simulator.carregar_tarefas(tasks)
+
+# Executar em modo passo-a-passo
+historico = simulator.executar_passo_a_passo()
+```
+
+### Comandos Disponíveis
+- **Enter**: Executa próximo tick
+- **q/quit**: Sai da simulação
+- **info \<id\>**: Detalhes de uma tarefa
+- **status**: Status geral do sistema
+- **continue**: Executa até o fim
+
+### Exemplo Interativo
+```bash
+python examples/teste_interativo.py
+```
+
+**Para mais detalhes, consulte:** [`docs/passo-a-passo.md`](docs/passo-a-passo.md)
+
 
 ## 📝 Status do Desenvolvimento
 
@@ -76,10 +109,15 @@ for task in tasks:
   - 29 testes unitários (100% sucesso)
   - Documentação detalhada
   - Exemplos práticos
+- [x] **Task 2.4** - Modo Passo-a-Passo (Debugger)
+  - Execução interativa tick por tick
+  - Comandos para inspeção de estado
+  - 14 testes unitários (100% sucesso)
+  - Documentação completa em [`docs/passo-a-passo.md`](docs/passo-a-passo.md)
 
 ### 🚧 Em Desenvolvimento
 - [x] Algoritmos de escalonamento
-- [ ] Simulador principal
+- [x] Simulador principal
 - [ ] Modos de execução
 - [ ] Visualização gráfica (Diagramas de Gantt)
 
@@ -97,4 +135,5 @@ python teste_completo.py
 - [Scheduler](docs/Scheduler.md) - Algoritmos de escalonamento
 - [ConfigParser](docs/config-parser.md) - Formato de arquivos
 - [Clock](docs/Clock.md) - Gerenciamento de tempo
+- [Passo-a-Passo](docs/passo-a-passo.md) - Modo debugger interativo
 
