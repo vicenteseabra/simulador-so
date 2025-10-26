@@ -31,6 +31,8 @@ class GanttChart:
         """
         # Estrutura de dados para armazenar execução
         self.intervalos: List[Dict[str, Any]] = []
+        # Armazena o tempo de ingresso de cada tarefa na fila (PRONTO)
+        self.tempo_ingresso_fila: Dict[str, int] = {}
 
     def adicionar_intervalo(self, task_id: str, inicio: int, fim: int, cor: str):
         """
@@ -53,6 +55,17 @@ class GanttChart:
             'cor': cor
         }
         self.intervalos.append(novo_intervalo)
+
+    def registrar_ingresso_fila(self, task_id: str, tempo: int):
+        """
+        Registra quando uma tarefa entra na fila de prontos.
+        
+        Parâmetros:
+            task_id (str): O ID da tarefa
+            tempo (int): O tempo em que entrou na fila
+        """
+        if task_id not in self.tempo_ingresso_fila:
+            self.tempo_ingresso_fila[task_id] = tempo
 
     def get_dados(self) -> Dict[str, List[Dict[str, Any]]]:
         """
@@ -146,8 +159,8 @@ class GanttChart:
         except ValueError:
             max_id_len = 0 # Caso não haja tarefas
 
-        # 1. Exibir cada linha de tarefa
-        for task_id in sorted(dados_por_tarefa.keys()):
+        # 1. Exibir cada linha de tarefa (ordem inversa para coincidir com SVG)
+        for task_id in sorted(dados_por_tarefa.keys(), reverse=True):
             intervalos_exec = dados_por_tarefa[task_id]
             
             # Começa com uma linha cheia de 'espera'
@@ -212,7 +225,7 @@ class GanttChart:
         
         # Configurações
         H_LINHA = 40
-        M_TOPO, M_ESQ, M_DIR, M_BAIXO = 60, 100, 50, 80
+        M_TOPO, M_ESQ, M_DIR, M_BAIXO = 60, 50, 50, 80
         L_TICK = 50
         
         dados = self.get_dados()
@@ -232,6 +245,7 @@ class GanttChart:
         svg += self._grid(M_ESQ, M_TOPO, tempo_total, num_tasks, L_TICK, H_LINHA)
         svg += self._eixo_tempo(M_ESQ, M_TOPO, tempo_total, num_tasks, L_TICK, H_LINHA)
         svg += self._labels_tasks(dados, M_ESQ, M_TOPO, H_LINHA)
+        svg += self._barras_espera(dados, M_ESQ, M_TOPO, tempo_total, L_TICK, H_LINHA)
         svg += self._barras(dados, M_ESQ, M_TOPO, L_TICK, H_LINHA)
         svg += self._legenda(dados, M_ESQ, M_TOPO, num_tasks, H_LINHA)
         svg += '</svg>'
@@ -298,16 +312,45 @@ class GanttChart:
         """Labels das tarefas."""
         svg = '  <!-- Labels Tarefas -->\n'
         
+        num_tasks = len(dados)
+        
+        # Labels individuais das tarefas
         for idx, task_id in enumerate(sorted(dados.keys(), reverse=True)):
             y = m_topo + (idx * h_linha) + (h_linha / 2) + 5
             x = m_esq - 10
             svg += f'  <text x="{x}" y="{y}" text-anchor="end" class="task-label">{task_id}</text>\n'
         
+        # Título do eixo vertical "Tarefas"
+        x_titulo = m_esq - 30
+        y_titulo = m_topo + (num_tasks * h_linha / 2)
+        svg += f'  <text x="{x_titulo}" y="{y_titulo}" text-anchor="middle" class="axis-label" '
+        svg += f'font-weight="bold" transform="rotate(-90 {x_titulo} {y_titulo})">Tarefas</text>\n'
+        
+        return svg
+
+    def _barras_espera(self, dados: dict, m_esq: int, m_topo: int, tempo_total: int, l_tick: int, h_linha: int) -> str:
+        """Barras vazias representando o período desde que a tarefa entra na fila."""
+        svg = '  <!-- Barras Espera -->\n'
+        PAD = 4
+        
+        for idx, task_id in enumerate(sorted(dados.keys(), reverse=True)):
+            # Pega o tempo de ingresso na fila
+            tempo_ingresso = self.tempo_ingresso_fila.get(task_id, 0)
+            
+            # Desenha barra vazia desde o ingresso até o fim total
+            x = m_esq + (tempo_ingresso * l_tick)
+            y = m_topo + (idx * h_linha) + PAD
+            w = (tempo_total - tempo_ingresso) * l_tick
+            h = h_linha - (2 * PAD)
+            
+            # Barra vazia com borda preta sólida
+            svg += f'  <rect x="{x}" y="{y}" width="{w}" height="{h}" fill="none" stroke="#333" stroke-width="1"/>\n'
+        
         return svg
 
     def _barras(self, dados: dict, m_esq: int, m_topo: int, l_tick: int, h_linha: int) -> str:
         """Barras de execução."""
-        svg = '  <!-- Barras -->\n'
+        svg = '  <!-- Barras Execução -->\n'
         PAD = 4
         
         for idx, task_id in enumerate(sorted(dados.keys(), reverse=True)):
@@ -318,13 +361,8 @@ class GanttChart:
                 h = h_linha - (2 * PAD)
                 cor = intervalo['cor']
                 
+                # Barra preenchida
                 svg += f'  <rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{cor}" stroke="#333" stroke-width="1" opacity="0.8"/>\n'
-                
-                # Label se couber
-                if w > 30:
-                    x_txt = x + (w / 2)
-                    y_txt = y + (h / 2) + 5
-                    svg += f'  <text x="{x_txt}" y="{y_txt}" text-anchor="middle" font-family="Arial" font-size="11px" fill="#FFF" font-weight="bold">{task_id}</text>\n'
         
         return svg
 

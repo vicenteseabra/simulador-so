@@ -7,7 +7,6 @@ try:
     from src.config_parser import ConfigParser
     from src.scheduler import SchedulerFactory
     from src.simulator import Simulator
-    from src.gantt import GanttChart
     from src.task import Task
 except ImportError:
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -15,7 +14,6 @@ except ImportError:
         from src.config_parser import ConfigParser
         from src.scheduler import SchedulerFactory
         from src.simulator import Simulator
-        from src.gantt import GanttChart
         from src.task import Task
     except ImportError as e:
         print(f"Erro crítico de importação: {e}", file=sys.stderr)
@@ -53,47 +51,6 @@ def configurar_argumentos() -> argparse.Namespace:
     )
 
     return parser.parse_args()
-
-
-def popular_gantt_chart(historico: List[Tuple[int, str]], tasks: List[Task]) -> GanttChart:
-    """
-    Processa o histórico de execução e o insere no objeto GanttChart.
-    (Lógica corrigida baseada no script de demonstração)
-    """
-    gantt = GanttChart()
-    
-    # Cria mapa de task_id -> cor
-    cores = {task.id: task.cor for task in tasks}
-    
-    # Agrupa execuções consecutivas
-    if not historico:
-        return gantt
-    
-    inicio_intervalo = historico[0][0]
-    task_atual = historico[0][1]
-    
-    for i in range(1, len(historico)):
-        tempo, task_id = historico[i]
-        
-        # Se mudou de tarefa
-        if task_id != task_atual:
-            # Fecha intervalo anterior
-            if task_atual is not None:  # Ignora períodos IDLE (ociosidade)
-                cor = cores.get(task_atual, '#CCCCCC') # Usa cinza se não achar
-                gantt.adicionar_intervalo(task_atual, inicio_intervalo, tempo, cor)
-            
-            # Inicia novo intervalo
-            inicio_intervalo = tempo
-            task_atual = task_id
-    
-    # Fecha último intervalo
-    if task_atual is not None:
-        # O tempo final é o tick do último evento + 1
-        tempo_final = historico[-1][0] + 1
-        cor = cores.get(task_atual, '#CCCCCC')
-        gantt.adicionar_intervalo(task_atual, inicio_intervalo, tempo_final, cor)
-    
-    return gantt
 
 
 def exibir_resultados(simulator: Simulator, resultados: Dict[str, Any]):
@@ -197,10 +154,8 @@ def main(args: argparse.Namespace):
 
     # 6. Gerar gráfico de Gantt
     print("\n6. Gerando gráfico de Gantt...")
-    gantt = popular_gantt_chart(
-        resultados['historico_execucao'], 
-        simulator.tasks
-    )
+    # Usa o gantt que já está no simulador (já tem os tempos de ingresso registrados)
+    gantt = simulator.gantt
     
     # Exibe no terminal
     print("\n--- Gráfico de Gantt (Terminal) ---")

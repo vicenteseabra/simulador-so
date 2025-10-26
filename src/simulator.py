@@ -1,6 +1,7 @@
 import time
 from src.clock import Clock
 from src.task import Task, TaskState
+from src.gantt import GanttChart
 
 
 class Simulator:
@@ -22,6 +23,7 @@ class Simulator:
         self.scheduler = scheduler
         self.tasks = []
         self.historico_execucao = []
+        self.gantt = GanttChart()
 
     # Carregamento e controle de tarefas
     def carregar_tarefas(self, tasks):
@@ -41,6 +43,7 @@ class Simulator:
             if task.estado == TaskState.NOVO and task.ingresso == tempo_atual:
                 task.admitir()
                 self.scheduler.adicionar_tarefa(task)
+                self.gantt.registrar_ingresso_fila(task.id, tempo_atual)
 
     # Execução de um ciclo
     def executar_tick(self):
@@ -111,6 +114,10 @@ class Simulator:
 
         if log:
             print("Simulação encerrada.")
+        
+        # Processa histórico para preencher o gantt
+        self._processar_historico_gantt()
+        
         return self.historico_execucao
     
     def executar_completo(self):
@@ -136,8 +143,66 @@ class Simulator:
             'tempo_execucao_real_ms': tempo_execucao_real_ms,
             'historico_execucao': self.historico_execucao
         }
+        
+        # Processa histórico para preencher o gantt
+        self._processar_historico_gantt()
 
         return estatisticas
+
+    def _processar_historico_gantt(self):
+        """
+        Processa o histórico de execução e adiciona intervalos ao gantt.
+        Agrupa execuções consecutivas da mesma tarefa em um único intervalo.
+        """
+        if not self.historico_execucao:
+            return
+        
+        # Cria um dicionário de cores por tarefa
+        cores = {task.id: task.cor for task in self.tasks}
+        
+        # Agrupa intervalos consecutivos
+        intervalo_atual = None
+        
+        for tempo, task_id in self.historico_execucao:
+            if task_id is None:  # CPU ociosa
+                if intervalo_atual:
+                    # Finaliza intervalo anterior
+                    self.gantt.adicionar_intervalo(
+                        intervalo_atual['task_id'],
+                        intervalo_atual['inicio'],
+                        tempo,
+                        intervalo_atual['cor']
+                    )
+                    intervalo_atual = None
+            else:
+                if intervalo_atual and intervalo_atual['task_id'] == task_id:
+                    # Continua no mesmo intervalo (não faz nada)
+                    pass
+                else:
+                    # Nova tarefa
+                    if intervalo_atual:
+                        # Finaliza intervalo anterior
+                        self.gantt.adicionar_intervalo(
+                            intervalo_atual['task_id'],
+                            intervalo_atual['inicio'],
+                            tempo,
+                            intervalo_atual['cor']
+                        )
+                    # Inicia novo intervalo
+                    intervalo_atual = {
+                        'task_id': task_id,
+                        'inicio': tempo,
+                        'cor': cores.get(task_id, '#999999')
+                    }
+        
+        # Finaliza último intervalo se existir
+        if intervalo_atual:
+            self.gantt.adicionar_intervalo(
+                intervalo_atual['task_id'],
+                intervalo_atual['inicio'],
+                self.clock.get_tempo(),
+                intervalo_atual['cor']
+            )
 
     def _exibir_estado_sistema(self):
         """Exibe o estado atual do sistema de forma formatada."""
