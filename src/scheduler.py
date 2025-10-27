@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Type
-from src.task import Task, TaskState
+from task import Task, TaskState
 
 
 class Scheduler(ABC):
@@ -154,4 +154,3 @@ class SchedulerFactory:
             )
 
         return scheduler_cls(quantum=quantum)
-

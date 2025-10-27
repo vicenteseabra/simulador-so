@@ -10,7 +10,7 @@ Eventos suportados:
     - ML:tempo (ex: ML:1)
     - MU:tempo (ex: MU:3)
 """
-from src.task import Task
+from task import Task
 class ConfigParser:
     """Parser para arquivos de configuração do simulador."""
     ALGORITMOS_VALIDOS = ['FIFO', 'SRTF', 'PRIORIDADE']
@@ -155,6 +155,29 @@ class ConfigParser:
             evento_str = evento_str.strip()
             if not evento_str:
                 continue
+            
+            # Tenta converter o formato E/S(tempo,duracao) para IO:tempo-duracao
+            if evento_str.startswith('E/S(') and evento_str.endswith(')'):
+                try:
+                    conteudo = evento_str[4:-1]
+                    # O separador pode ser vírgula ou ponto e vírgula
+                    if ',' in conteudo:
+                        tempo, duracao = map(str.strip, conteudo.split(','))
+                    elif ';' in conteudo:
+                        tempo, duracao = map(str.strip, conteudo.split(';'))
+                    else:
+                        # Se não tem vírgula nem ponto e vírgula, tenta splitar por espaço (caso o usuário tenha digitado E/S(tempo duracao))
+                        partes_espaco = conteudo.split()
+                        if len(partes_espaco) == 2:
+                            tempo, duracao = partes_espaco
+                        else:
+                            raise ValueError("Separador inválido")
+                    
+                    evento_str = f"IO:{tempo}-{duracao}"
+                except ValueError:
+                    self.avisos.append(f"Evento E/S mal formatado: {evento_str}")
+                    continue
+            
             try:
                 # IO:tempo-duracao
                 if evento_str.startswith('IO:'):

@@ -1,7 +1,7 @@
 import time
-from src.clock import Clock
-from src.task import Task, TaskState
-from src.gantt import GanttChart
+from clock import Clock
+from task import Task, TaskState
+from gantt import GanttChart
 
 
 class Simulator:
@@ -24,6 +24,7 @@ class Simulator:
         self.tasks = []
         self.historico_execucao = []
         self.gantt = GanttChart()
+        self.fila_io = [] # Fila de tarefas bloqueadas por E/S
 
     # Carregamento e controle de tarefas
     def carregar_tarefas(self, tasks):
@@ -76,23 +77,65 @@ class Simulator:
             if tarefa.estado == TaskState.PRONTO:
                 tarefa.iniciar()
 
-            tarefa.executar(tempo_atual)
-            self.historico_execucao.append((tempo_atual, tarefa.id))
+            # 1. Verifica se há um evento de E/S para o tempo atual
+            # 1. Verifica se há um evento de E/S para o tempo de execução atual da tarefa
+            # O evento IO:X-Y deve ocorrer *após* o X-ésimo tick de execução.
+            # tempo_execucao é o número de ticks que a tarefa já executou.
+            # Se tempo_execucao é 3, a tarefa está prestes a executar seu 4º tick.
+            # Um evento em tempo=4 deve ser verificado *antes* da execução do 4º tick.
+            # A verificação deve ser feita para o tempo de execução que será atingido *após* este tick.
+            # Se a tarefa executou 3 ticks (tempo_execucao=3), o próximo tick a ser executado será o 4º.
+            # O evento IO:4-2 deve ser verificado quando tempo_execucao == 3.
+            # O valor de 'tempo' no evento IO é o tempo de execução *relativo* na tarefa.
+            # Se a tarefa executou 'tempo_execucao' ticks, ela está prestes a executar o 'tempo_execucao + 1' tick.
+            evento_io = next((e for e in tarefa.eventos 
+                             if e["tipo"] == "IO" and e["tempo"] == tarefa.tempo_execucao), None)
+            
+            if evento_io:
+                # Executa a tarefa por 1 tick ANTES de verificar o evento de I/O
+                tarefa.executar(tempo_atual)
+                self.historico_execucao.append((tempo_atual, tarefa.id))
+            else:
+                tarefa.executar(tempo_atual)
+                self.historico_execucao.append((tempo_atual, tarefa.id))
 
+            # 2. Verifica se um evento de I/O deve ocorrer *após* a execução
+            # O evento IO:X-Y ocorre no final do X-ésimo tick (quando tempo_execucao == X)
+            evento_io = next((e for e in tarefa.eventos 
+                             if e['tipo'] == 'IO' and e['tempo'] == tarefa.tempo_execucao), None)
+
+            if evento_io:
+                # Bloqueia a tarefa para E/S
+                tarefa.bloquear()
+                self.scheduler.remover_tarefa(tarefa)
+                # tempo_fim é o tick em que a tarefa será desbloqueada (tempo_atual + duracao)
+                self.fila_io.append({
+                    'tarefa': tarefa,
+                    'tempo_fim': tempo_atual + evento_io['duracao']
+                })
+                # Remove o evento para não ser processado novamente
+                # É importante que o evento seja removido, senão a tarefa pode bloquear novamente.
+                tarefa.eventos.remove(evento_io)
+            
+            # 3. Verifica finalização (só se não foi bloqueada)
             if tarefa.estado == TaskState.TERMINADO:
                 self.scheduler.remover_tarefa(tarefa)
         else:
             # Nenhuma tarefa disponível (CPU ociosa)
             self.historico_execucao.append((tempo_atual, None))
+
+        # 4. Trata a fila de E/S
+        self._tratar_fila_io(tempo_atual)
+
         # Avança o relógio
         self.clock.tick()
 
     # Controle de término
     def tem_tarefas_pendentes(self):
         """
-        Retorna True enquanto existir alguma tarefa não terminada.
+        Retorna True enquanto existir alguma tarefa não terminada (NOVO, PRONTO, EXECUTANDO, BLOQUEADO).
         """
-        return any(t.estado != TaskState.TERMINADO for t in self.tasks)
+        return any(t.estado != TaskState.TERMINADO for t in self.tasks) or len(self.fila_io) > 0
 
     # Execução completa da simulação
     def executar(self, tempo_max=None, log=False):
@@ -346,3 +389,28 @@ class Simulator:
         print("\n=== Simulação Concluída ===")
         self._exibir_status_geral()
         return self.historico_execucao
+
+
+    def _tratar_fila_io(self, tempo_atual):
+        """
+        Verifica tarefas na fila de E/S e as move para a fila de prontos
+        quando o tempo de E/S termina.
+        """
+        tarefas_desbloqueadas = []
+        
+        # Filtra tarefas que terminaram a E/S
+        # O desbloqueio ocorre no início do tick em que item['tempo_fim'] é igual ao tempo_atual.
+        for item in self.fila_io[:]: # Itera sobre uma cópia
+            if item['tempo_fim'] == tempo_atual:
+                tarefas_desbloqueadas.append(item['tarefa'])
+        
+        # Remove da fila de E/S e desbloqueia
+        for tarefa in tarefas_desbloqueadas:
+            # Remove da fila_io
+            self.fila_io.remove(next(i for i in self.fila_io if i['tarefa'] == tarefa))
+            
+            # Desbloqueia e adiciona ao escalonador
+            if tarefa.estado == TaskState.BLOQUEADO:
+                tarefa.desbloquear()
+                self.scheduler.adicionar_tarefa(tarefa)
+                self.gantt.registrar_ingresso_fila(tarefa.id, tempo_atual) # Entra na fila no tick atual (tempo_atual)

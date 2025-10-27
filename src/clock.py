@@ -1,5 +1,3 @@
-# src/clock.py
-
 class Clock:
     """
     Relógio global do simulador.
@@ -14,7 +12,6 @@ class Clock:
     def tick(self):
         """Avança o relógio em uma unidade de tempo."""
         self.tempo_atual += 1
-        print(f"[DEBUG] Tick -> tempo_atual = {self.tempo_atual}")
 
     def get_tempo(self):
         """Retorna o tempo atual do relógio."""
