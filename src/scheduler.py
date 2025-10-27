@@ -28,7 +28,7 @@ class Scheduler(ABC):
     def selecionar_proxima_tarefa(self) -> Optional[Task]:
         """
         Retorna a próxima tarefa que deve ser executada.
-        Cada algoritmo define sua própria estratégia (FIFO, Round Robin, etc).
+        Cada algoritmo define sua própria estratégia (FIFO, SRTF, etc).
         """
         pass
 

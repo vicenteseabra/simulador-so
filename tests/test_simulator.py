@@ -65,12 +65,12 @@ def test_execucao_completa_task_2_3():
 
     resultado = sim.executar_completo()
 
-    print(f"\n✓ Simulação concluída em {resultado['tempo_total']} ticks")
+    print(f"\n✓ Simulação concluída em {resultado['tempo_total_ticks']} ticks")
     print(f"✓ Tempo de execução real: {resultado['tempo_execucao_real_ms']:.2f} ms")
     print(f"✓ Eventos no histórico: {len(resultado['historico_execucao'])}")
     
     # Validações
-    assert resultado['tempo_total'] > 0, "Tempo total deve ser > 0"
+    assert resultado['tempo_total_ticks'] > 0, "Tempo total deve ser > 0"
     assert resultado['tempo_execucao_real_ms'] >= 0, "Tempo real deve ser >= 0"
     assert len(resultado['historico_execucao']) > 0, "Histórico não pode estar vazio"
     
