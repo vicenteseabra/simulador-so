@@ -53,7 +53,7 @@ def configurar_argumentos() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def exibir_resultados(simulator: Simulator, resultados: Dict[str, Any]):
+def exibir_resultados(simulator: Simulator, resultados: Dict[str, Any], args: argparse.Namespace):
     """
     Exibe as métricas finais da simulação no terminal.
     """
@@ -150,11 +150,10 @@ def main(args: argparse.Namespace):
 
     # 5. Exibir resultados
     print("5. Exibindo resultados...")
-    exibir_resultados(simulator, resultados)
+    exibir_resultados(simulator, resultados, args)
 
     # 6. Gerar gráfico de Gantt
     print("\n6. Gerando gráfico de Gantt...")
-    # Usa o gantt que já está no simulador (já tem os tempos de ingresso registrados)
     gantt = simulator.gantt
     
     # Exibe no terminal
@@ -165,13 +164,11 @@ def main(args: argparse.Namespace):
     # Exporta SVG
     if args.output:
         try:
-            # Garante que o diretório 'output' exista
             output_dir = 'output'
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
                 print(f"   -> Diretório '{output_dir}' criado.")
             
-            # O método exportar_svg já prefixa com 'output/'
             path_svg = gantt.exportar_svg(args.output)
             print(f"\n   -> Gráfico de Gantt salvo em: {path_svg}")
         except IOError as e:
