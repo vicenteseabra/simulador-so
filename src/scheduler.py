@@ -113,10 +113,7 @@ class SchedulerFactory:
 
     1. Implemente uma subclasse de :class:`Scheduler` com a lógica de seleção
        em ``selecionar_proxima_tarefa``.
-    2. Registre a classe no dicionário ``_REGISTRO`` usando uma chave única
-       (preferencialmente em letras maiúsculas) e, se necessário, trate aliases.
-    3. Atualize, conforme apropriado, a documentação e a lista de algoritmos
-       válidos em módulos que façam parsing de configuração (ex.: ``ConfigParser``).
+    2. Registre a classe no dicionário ``_REGISTRO`` usando uma chave única.
     """
 
     _REGISTRO: Dict[str, Type[Scheduler]] = {

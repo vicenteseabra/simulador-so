@@ -26,7 +26,13 @@ python -m PyInstaller --onefile --name "SimuladorSO" ^
   --add-data "src;src" ^
   launcher.py
 ```
-
+No linux:
+```bash
+python -m PyInstaller --onefile --name "SimuladorSO" \
+  --add-data "examples:examples" \
+  --add-data "src:src" \
+  launcher.py
+```
 
 ## 📁 Estrutura do Projeto
 ```
