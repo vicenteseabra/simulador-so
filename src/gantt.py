@@ -18,7 +18,7 @@ class GanttChart:
     de forma organizada para a renderização.
     """
 
-    def __init__(self):
+    def __init__(self, tipo_escalonamento: str = ""):
         """
         Inicializa a estrutura de dados do gráfico de Gantt.
 
@@ -33,6 +33,7 @@ class GanttChart:
         self.intervalos: List[Dict[str, Any]] = []
         # Armazena o tempo de ingresso de cada tarefa na fila (PRONTO)
         self.tempo_ingresso_fila: Dict[str, int] = {}
+        self.tipo_escalonamento = tipo_escalonamento
 
     def adicionar_intervalo(self, task_id: str, inicio: int, fim: int, cor: str):
         """
@@ -271,8 +272,11 @@ class GanttChart:
     '''
 
     def _titulo(self, w: int) -> str:
-        """Título."""
-        return f'  <text x="{w/2}" y="30" text-anchor="middle" class="title">Diagrama de Gantt</text>\n'
+        titulo = "Diagrama de Gantt"
+        if self.tipo_escalonamento:
+            titulo += f" - {self.tipo_escalonamento}"
+        return f'  <text x="{w/2}" y="30" text-anchor="middle" class="title">{titulo}</text>\n'
+
 
     def _grid(self, m_esq: int, m_topo: int, tempo: int, n_tasks: int, l_tick: int, h_linha: int) -> str:
         """Grid de referência."""

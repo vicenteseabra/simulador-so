@@ -3,7 +3,7 @@ import os
 import argparse
 from src.main import main
 
-# Corrige o caminho para a pasta 'examples' mesmo quando rodar como .exe
+# Caminho para a pasta 'examples' mesmo quando rodar como .exe
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS  # diretório temporário do PyInstaller
 else:

@@ -7,7 +7,7 @@
         .legend-text { font-family: Arial; font-size: 11px; fill: #333; }
     </style></defs>
       <rect width="1150" height="340" fill="#FFF"/>
-  <text x="575.0" y="30" text-anchor="middle" class="title">Diagrama de Gantt</text>
+  <text x="575.0" y="30" text-anchor="middle" class="title">Diagrama de Gantt - PriorityPreemptiveScheduler</text>
   <!-- Grid -->
   <line x1="50" y1="60" x2="50" y2="260" class="grid-line"/>
   <line x1="100" y1="60" x2="100" y2="260" class="grid-line"/>
