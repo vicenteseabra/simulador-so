@@ -216,8 +216,20 @@ class ConfigParser:
             'total_tarefas': len(self.tasks),
             'duracao_total': sum(t.duracao for t in self.tasks),
             'avisos': len(self.avisos)
-        }
-    
+        }    
+
+def criar_arquivo_exemplo(filename, algoritmo, quantum=1, num_tarefas=1):
+    """
+    Cria um arquivo de exemplo com configuração de tarefas.
+    Retorna True se conseguiu criar.
+    """
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(f"{algoritmo};{quantum}\n")
+        for i in range(num_tarefas):
+            f.write(f"{i+1};#FF0000;0;1;1;\n")
+    return True
+
+
 # Teste básico
 if __name__ == '__main__':
     print("=== Teste do ConfigParser ===\n")

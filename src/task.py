@@ -5,17 +5,18 @@ Representa processos/tarefas no sistema operacional simulado.
 
 
 class TaskState:
-    """Estados possíveis de uma tarefa no sistema."""
-    NOVO = "NOVO"
-    PRONTO = "PRONTO"
-    EXECUTANDO = "EXECUTANDO"
-    BLOQUEADO = "BLOQUEADO"
-    TERMINADO = "TERMINADO"
+    """Estados possíveis de uma tarefa no ciclo de vida de um processo no SO."""
+    NOVO = "NOVO" # A tarefa foi criada, mas ainda não está pronta para execução
+    PRONTO = "PRONTO" # A tarefa está na fila, aguardando a CPU
+    EXECUTANDO = "EXECUTANDO"  # A tarefa está atualmente em execução na CPU
+    BLOQUEADO = "BLOQUEADO" # A tarefa está aguardando por I/O ou outro evento
+    TERMINADO = "TERMINADO" # A tarefa completou sua execução
 
 
 class Task:
     """
     Representa uma tarefa/processo no simulador (Task Control Block).
+    Contém todos os atributos de controle e métricas de tempo.
     
     Attributes:
         id (str): Identificador único
@@ -32,6 +33,7 @@ class Task:
     
     def __init__(self, task_id, cor, ingresso, duracao, prioridade=0, eventos=None):
         """Inicializa uma nova tarefa."""
+        # Parâmetros de entrada
         self.id = task_id
         self.cor = cor
         self.ingresso = ingresso
@@ -45,10 +47,11 @@ class Task:
         self.tempo_inicio = None
         self.tempo_fim = None
         self.tempo_execucao = 0  # Tempo relativo de execução da tarefa
+        self.numero_preempcoes = 0  # Contador de preempções
     
     def executar(self, tempo_atual):
         """
-        Executa a tarefa por 1 tick.
+        Simula a execução da tarefa por um tick de tempo.
         
         Args:
             tempo_atual (int): Tempo atual do sistema
@@ -56,17 +59,19 @@ class Task:
         Returns:
             bool: True se a tarefa terminou
         """
+        # Checagem de Pré-condição: Só executa se estiver no estado EXECUTANDO.
         if self.estado != TaskState.EXECUTANDO:
             return False
             
-        # Registra primeiro momento de execução
+        # Registro do Início: Se for a primeira vez que a tarefa executa, registra o tempo.
         if self.tempo_inicio is None:
             self.tempo_inicio = tempo_atual
-        
+
+        # Consumo de CPU: Decrementa o tempo restante e incrementa o tempo total executado.
         self.tempo_restante -= 1
         self.tempo_execucao += 1
         
-        # Verifica finalização
+        # Verificação de Finalização: Se o tempo restante chegou a zero, a tarefa terminou.
         if self.tempo_restante == 0:
             self.estado = TaskState.TERMINADO
             self.tempo_fim = tempo_atual + 1  # Tempo após completar execução
@@ -88,6 +93,7 @@ class Task:
         """Preempta tarefa (EXECUTANDO -> PRONTO)."""
         if self.estado == TaskState.EXECUTANDO:
             self.estado = TaskState.PRONTO
+            self.numero_preempcoes += 1
     
     def bloquear(self):
         """Bloqueia tarefa para I/O (EXECUTANDO -> BLOQUEADO)."""

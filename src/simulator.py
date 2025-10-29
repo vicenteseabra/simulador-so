@@ -74,6 +74,7 @@ class Simulator:
             tarefa_executando.preemptar()
         
         if tarefa:
+            # Se a tarefa selecionada estava PRONTO, ela agora INICIA a execução.
             if tarefa.estado == TaskState.PRONTO:
                 tarefa.iniciar()
 
@@ -91,7 +92,8 @@ class Simulator:
     # Controle de término
     def tem_tarefas_pendentes(self):
         """
-        Retorna True enquanto existir alguma tarefa não terminada.
+        Verifica se ainda há alguma tarefa que não terminou (NOVO, PRONTO, EXECUTANDO, BLOQUEADO).
+        Usado para determinar o fim da simulação.
         """
         return any(t.estado != TaskState.TERMINADO for t in self.tasks)
 
@@ -100,6 +102,9 @@ class Simulator:
         """
         Executa a simulação até todas as tarefas terminarem
         ou até atingir o tempo máximo (se definido).
+        Função interna para converter o histórico de execução tick-a-tick
+        em intervalos consolidados para o Gráfico de Gantt.
+        Evita que o Gantt tenha que desenhar milhares de barras de 1 tick.
         """
         self.clock.reset()  # sempre inicia o relógio do zero
 
@@ -129,11 +134,13 @@ class Simulator:
         
         self.clock.reset()
 
+        # Loop principal: executa tick por tick até que não haja mais tarefas pendentes
         while self.tem_tarefas_pendentes():
             self.executar_tick()
 
         end_time = time.time()
         
+        # Cálculo de estatísticas de tempo real e tempo de simulação
         tempo_execucao_real_ms = (end_time - start_time) * 1000
         tempo_total_ticks = self.clock.get_tempo()
 

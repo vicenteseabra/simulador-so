@@ -1,9 +1,14 @@
 """
 Testes para validar os três algoritmos de escalonamento.
 """
+import sys
+import os
+
+# Adiciona o diretório raiz ao path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.scheduler import FIFOScheduler, SRTFScheduler, PriorityPreemptiveScheduler
-from src.task import TCB
+from src.task import Task as TCB
 from src.simulator import Simulator
 
 

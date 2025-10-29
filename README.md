@@ -11,12 +11,62 @@ Simulador de escalonamento de processos com suporte a múltiplos algoritmos e an
 - Nenhuma biblioteca externa necessária
 
 ## 🚀 Como Executar
+Rodar com o comando:
 
+```bash
+python launcher.py
+```
+
+## 📦 Empacotar com PyInstaller
+
+Crie um executável usando o PyInstaller com o comando:
+```bash
+python -m PyInstaller --onefile --name "SimuladorSO" ^
+  --add-data "examples;examples" ^
+  --add-data "src;src" ^
+  launcher.py
+```
 
 
 ## 📁 Estrutura do Projeto
 ```
-
+simulador-so/
+├── README.md
+├── LICENSE
+├── pyproject.toml
+├── requirements.txt
+├── src/
+│   ├── __init__.py
+│   ├── task.py
+│   ├── clock.py
+│   ├── config_parser.py
+│   ├── simulator.py
+│   ├── scheduler.py
+│   ├── gantt.py
+│   └── scheduler/
+│
+├── examples/
+│   ├── config_fifo.txt
+│   ├── config_srtf.txt
+│   └── config_prioridade.py
+├── docs/
+│   ├── Task.md
+│   ├── Simulator.md
+│   ├── Scheduler.md
+│   ├── config-parser.md
+│   ├── Clock.md
+│   ├── passo-a-passo.md
+│   └── gantt.md
+├── tests/
+│   ├── test_config_parser.py
+│   ├── test_clock.py
+│   ├── test_algorithms.py
+│   ├── test_simulator.py
+│   ├── test_interativo.py
+│   └── test_gantt.py
+├── output/
+│   └── *.svg
+└── teste_completo.py
 ```
 
 ## 🔧 Algoritmos Implementados

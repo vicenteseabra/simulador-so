@@ -177,11 +177,11 @@ class TestConfigParser(TestCase):
     
     def test_parse_round_robin(self):
         """Testa parsing de configuração Round Robin."""
-        conteudo = "RR;3\nP1;#FF0000;0;10;0;\nP2;#00FF00;5;8;0;\n"
+        conteudo = "SRTF;3\nP1;#FF0000;0;10;0;\nP2;#00FF00;5;8;0;\n"
         arquivo = self.criar_arquivo_teste('test_rr.txt', conteudo)
         
         config, tasks = self.parser.parse_file(arquivo)
-        
+
         self.assertEqual(config['algoritmo'], 'RR')
         self.assertEqual(config['quantum'], 3)
         self.assertEqual(len(tasks), 2)
@@ -419,7 +419,7 @@ class TestConfigParser(TestCase):
         arquivo = 'test_exemplo_gerado.txt'
         self.test_files.append(arquivo)
         
-        resultado = criar_arquivo_exemplo(arquivo, 'RR', 3, 4)
+        resultado = criar_arquivo_exemplo(arquivo, 'SRTF', 3, 4)
         
         self.assertTrue(resultado)
         
