@@ -23,7 +23,8 @@ class Simulator:
         self.scheduler = scheduler
         self.tasks = []
         self.historico_execucao = []
-        self.gantt = GanttChart()
+        tipo_algo = getattr(scheduler, 'tipo_escalonamento', scheduler.__class__.__name__)
+        self.gantt = GanttChart(tipo_escalonamento=tipo_algo)
 
     # Carregamento e controle de tarefas
     def carregar_tarefas(self, tasks):
