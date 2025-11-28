@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Type
-from src.task import Task, TaskState
+from task import Task, TaskState
 
 
 class Scheduler(ABC):
@@ -101,6 +101,55 @@ class PriorityPreemptiveScheduler(Scheduler):
         return min(tarefas_disponiveis, key=lambda t: t.prioridade)
 
 
+class PrioridadeEnvScheduler(Scheduler):
+    """Escalonamento por Prioridade com Envelhecimento (Aging).
+
+    Fórmula: prioridade_dinamica -= alpha (a cada tick).
+
+    Attributes:
+        alpha: Fator de envelhecimento.
+        prioridades_dinamicas: {task_id: prioridade_atual}.
+    """
+
+    def __init__(self, quantum: int = 5, alpha: float = 1.0):
+        super().__init__(quantum)
+        self.alpha = alpha
+        self.prioridades_dinamicas: Dict[str, float] = {}
+
+    def adicionar_tarefa(self, tarefa: Task):
+        """Inicializa prioridade dinâmica."""
+        super().adicionar_tarefa(tarefa)
+        self.prioridades_dinamicas[tarefa.id] = float(tarefa.prioridade)
+
+    def aplicar_envelhecimento(self):
+        """Reduz prioridade de tarefas prontas (exceto executando)."""
+        for tarefa in self.fila_prontos:
+            if tarefa.estado == TaskState.PRONTO:
+                self.prioridades_dinamicas[tarefa.id] -= self.alpha
+
+    def selecionar_proxima_tarefa(self) -> Optional[Task]:
+        """Seleciona tarefa com menor prioridade dinâmica."""
+        tarefas_disponiveis = [t for t in self.fila_prontos
+                               if t.estado in (TaskState.PRONTO, TaskState.EXECUTANDO)]
+
+        if not tarefas_disponiveis:
+            return None
+
+        # Seleciona menor prioridade dinâmica (maior prioridade real)
+        proxima = min(tarefas_disponiveis,
+                     key=lambda t: self.prioridades_dinamicas.get(t.id, float(t.prioridade)))
+
+        # Reset prioridade ao executar
+        self.prioridades_dinamicas[proxima.id] = float(proxima.prioridade)
+
+        return proxima
+
+    def remover_tarefa(self, tarefa: Task):
+        """Limpa prioridade dinâmica."""
+        super().remover_tarefa(tarefa)
+        self.prioridades_dinamicas.pop(tarefa.id, None)
+
+
 class SchedulerFactory:
     """Factory para criação de escalonadores suportados.
 
@@ -120,6 +169,7 @@ class SchedulerFactory:
         "FIFO": FIFOScheduler,
         "SRTF": SRTFScheduler,
         "PRIORIDADE": PriorityPreemptiveScheduler,
+        "PRIOPENV": PrioridadeEnvScheduler,
     }
 
     @classmethod
