@@ -1,19 +1,20 @@
 """
 Módulo para parsing de arquivos de configuração do simulador de SO.
 
-Formato esperado:
-    Linha 1: ALGORITMO;QUANTUM
+Formatos suportados:
+    Linha 1: ALGORITMO;QUANTUM ou PRIOPEnv;QUANTUM;ALPHA
     Linhas seguintes: ID;COR;INGRESSO;DURACAO;PRIORIDADE;EVENTOS
 
-Eventos suportados:
-    - IO:tempo-duracao (ex: IO:2-1)
-    - ML:tempo (ex: ML:1)
-    - MU:tempo (ex: MU:3)
+Eventos:
+    - IO:xx-yy → IOEvent (tempo xx, duração yy)
+    - MLxx:yy → MutexLockEvent (mutex_id xx, tempo yy)
+    - MUxx:yy → MutexUnlockEvent (mutex_id xx, tempo yy)
 """
-from src.task import Task
+from task import Task
+from events import IOEvent, MutexLockEvent, MutexUnlockEvent
 class ConfigParser:
     """Parser para arquivos de configuração do simulador."""
-    ALGORITMOS_VALIDOS = ['FIFO', 'SRTF', 'PRIORIDADE']
+    ALGORITMOS_VALIDOS = ['FIFO', 'SRTF', 'PRIORIDADE', 'PRIOPENV']
     QUANTUM_PADRAO = 1
     PRIORIDADE_PADRAO = 0
     COR_PADRAO = '#808080'  # Cinza
@@ -76,8 +77,9 @@ class ConfigParser:
         self.avisos = []
     
     def _parse_config(self, linha):
-        """Parse da linha de configuração: ALGORITMO;QUANTUM"""
+        """Parse da linha de configuração: ALGORITMO;QUANTUM ou PRIOPEnv;QUANTUM;ALPHA"""
         partes = linha.split(';')
+
         # Algoritmo
         algoritmo = partes[0].strip().upper()
         if algoritmo not in self.ALGORITMOS_VALIDOS:
@@ -88,7 +90,7 @@ class ConfigParser:
         
         self.config['algoritmo'] = algoritmo
         
-        # Quantum (opcional)
+        # Quantum (opcional para alguns algoritmos, obrigatório para PRIOPEnv)
         if len(partes) >= 2 and partes[1].strip():
             try:
                 quantum = int(partes[1].strip())
@@ -99,7 +101,20 @@ class ConfigParser:
                 raise ValueError(f"Quantum inválido: {e}")
         else:
             self.config['quantum'] = self.QUANTUM_PADRAO
-    
+
+        # Alpha (apenas para PRIOPEnv)
+        if algoritmo == 'PRIOPENV':
+            if len(partes) >= 3 and partes[2].strip():
+                try:
+                    alpha = float(partes[2].strip())
+                    if alpha <= 0:
+                        raise ValueError("Alpha deve ser > 0")
+                    self.config['alpha'] = alpha
+                except ValueError as e:
+                    raise ValueError(f"Alpha inválido: {e}")
+            else:
+                self.config['alpha'] = 1.0  # Padrão
+
     def _parse_task(self, linha, num_linha):
         """Parse de uma linha de tarefa: ID;COR;INGRESSO;DURACAO;PRIORIDADE;EVENTOS"""
         partes = [p.strip() for p in linha.split(';')]
@@ -131,10 +146,13 @@ class ConfigParser:
             # Eventos (opcional)
             eventos = []
             if len(partes) >= 6:
-                # Junta todos os campos restantes (caso tenha ; nos eventos)
                 eventos_str = ';'.join(partes[5:])
                 if eventos_str:
                     eventos = self._parse_eventos(eventos_str)
+                    # Configura task_id nos eventos
+                    for evento in eventos:
+                        evento.task_id = task_id
+
             # Cria tarefa
             task = Task(task_id, cor, ingresso, duracao, prioridade, eventos)
             self.tasks.append(task)
@@ -150,52 +168,49 @@ class ConfigParser:
             list: Lista de dicts com eventos parseados
         """
         eventos = []
-        # Separa por ; (eventos múltiplos)
+
         for evento_str in eventos_str.split(';'):
             evento_str = evento_str.strip()
             if not evento_str:
                 continue
+
             try:
-                # IO:tempo-duracao
                 if evento_str.startswith('IO:'):
+                    # IO:xx-yy
                     params = evento_str[3:].split('-')
                     if len(params) != 2:
                         self.avisos.append(f"Evento IO mal formatado: {evento_str}")
                         continue
                     tempo = int(params[0])
                     duracao = int(params[1])
-                    if tempo < 0 or duracao < 0:
-                        self.avisos.append(f"Evento IO com valores negativos: {evento_str}")
+                    if tempo < 0 or duracao <= 0:
+                        self.avisos.append(f"Evento IO com valores inválidos: {evento_str}")
                         continue
-                    eventos.append({
-                        'tipo': 'IO',
-                        'tempo': tempo,
-                        'duracao': duracao
-                    })
-                # ML:tempo (Mutex Lock)
-                elif evento_str.startswith('ML:'):
-                    tempo = int(evento_str[3:])
+                    eventos.append(IOEvent(tipo='IO', tempo_relativo=tempo, task_id='', duracao=duracao))
+
+                elif evento_str.startswith('ML') and ':' in evento_str:
+                    # MLxx:yy
+                    idx = evento_str.find(':')
+                    mutex_id = evento_str[2:idx]
+                    tempo = int(evento_str[idx+1:])
                     if tempo < 0:
-                        self.avisos.append(f"Evento ML com tempo negativo: {evento_str}")
+                        self.avisos.append(f"Tempo negativo em: {evento_str}")
                         continue
-                    
-                    eventos.append({
-                        'tipo': 'ML',
-                        'tempo': tempo
-                    })
-                # MU:tempo (Mutex Unlock)
-                elif evento_str.startswith('MU:'):
-                    tempo = int(evento_str[3:])
+                    eventos.append(MutexLockEvent(tipo='MUTEX_LOCK', tempo_relativo=tempo, task_id='', mutex_id=mutex_id))
+
+                elif evento_str.startswith('MU') and ':' in evento_str:
+                    # MUxx:yy
+                    idx = evento_str.find(':')
+                    mutex_id = evento_str[2:idx]
+                    tempo = int(evento_str[idx+1:])
                     if tempo < 0:
-                        self.avisos.append(f"Evento MU com tempo negativo: {evento_str}")
+                        self.avisos.append(f"Tempo negativo em: {evento_str}")
                         continue
-                    eventos.append({
-                        'tipo': 'MU',
-                        'tempo': tempo
-                    })
+                    eventos.append(MutexUnlockEvent(tipo='MUTEX_UNLOCK', tempo_relativo=tempo, task_id='', mutex_id=mutex_id))
+
                 else:
-                    self.avisos.append(f"Tipo de evento desconhecido: {evento_str}")
-            
+                    self.avisos.append(f"Formato de evento inválido: {evento_str}")
+
             except (ValueError, IndexError) as e:
                 self.avisos.append(f"Erro ao parsear evento '{evento_str}': {e}")
         
@@ -209,25 +224,41 @@ class ConfigParser:
         """Retorna resumo da configuração."""
         if not self.config or not self.tasks:
             return {'valido': False}
-        return {
+
+        resumo = {
             'valido': True,
             'algoritmo': self.config['algoritmo'],
             'quantum': self.config['quantum'],
             'total_tarefas': len(self.tasks),
             'duracao_total': sum(t.duracao for t in self.tasks),
             'avisos': len(self.avisos)
-        }    
+        }
 
-def criar_arquivo_exemplo(filename, algoritmo, quantum=1, num_tarefas=1):
-    """
-    Cria um arquivo de exemplo com configuração de tarefas.
-    Retorna True se conseguiu criar.
+        # Adiciona alpha se PRIOPEnv
+        if self.config.get('alpha') is not None:
+            resumo['alpha'] = self.config['alpha']
+
+        return resumo
+
+def criar_arquivo_exemplo(filename, algoritmo='FIFO', quantum=1, alpha=None):
+    """Cria arquivo de exemplo com eventos.
+
+    Args:
+        filename: Nome do arquivo
+        algoritmo: FIFO, SRTF, PRIORIDADE, ou PRIOPENV
+        quantum: Quantum para o algoritmo
+        alpha: Alpha para PRIOPEnv (opcional)
     """
     with open(filename, 'w', encoding='utf-8') as f:
-        f.write(f"{algoritmo};{quantum}\n")
-        for i in range(num_tarefas):
-            f.write(f"{i+1};#FF0000;0;1;1;\n")
-    return True
+        if algoritmo == 'PRIOPENV' and alpha is not None:
+            f.write(f"{algoritmo};{quantum};{alpha}\n")
+        else:
+            f.write(f"{algoritmo};{quantum}\n")
+
+        # Exemplos com eventos
+        f.write("t01;#FF0000;0;5;2;IO:2-1;ML01:1;MU01:4\n")
+        f.write("t02;#00FF00;1;3;1;IO:1-2;ML02:2\n")
+        f.write("t03;#0000FF;2;4;3;ML01:0;MU01:3\n")
 
 
 # Teste básico
