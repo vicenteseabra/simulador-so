@@ -17,7 +17,7 @@ Escalonamento por Prioridade com Envelhecimento (Aging).
 ## Formato Config
 
 ```
-PRIOPEnv;5;1
+PRIOPENV;5;1
 # algoritmo;quantum;alpha
 ```
 

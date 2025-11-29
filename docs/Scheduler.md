@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O módulo define a estrutura base para todos os algoritmos de escalonamento do sistema operacional. Ele introduz a classe abstrata `Scheduler`, que estabelece a interface para gerenciamento da fila de tarefas prontas e a seleção da próxima tarefa a ser executada. O módulo também inclui uma implementação concreta, o `FIFOScheduler`.
+Define estrutura base para algoritmos de escalonamento e implementações concretas (FIFO, SRTF, Prioridade, PrioridadeEnv).
 
 ---
 

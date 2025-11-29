@@ -173,18 +173,24 @@ class SchedulerFactory:
     }
 
     @classmethod
-    def criar_scheduler(cls, nome_algoritmo: str, quantum: Optional[int] = None) -> Scheduler:
+    def criar_scheduler(cls, nome_algoritmo: str, quantum: Optional[int] = None, alpha: Optional[float] = None) -> Scheduler:
         """Cria uma instância de escalonador com base no nome do algoritmo.
 
         Args:
             nome_algoritmo: Nome do algoritmo desejado (case-insensitive).
             quantum: Quantum associado a algoritmos preemptivos (opcional).
+            alpha: Fator de envelhecimento para PRIOPEnv (opcional).
 
         Returns:
             Instância concreta de :class:`Scheduler`.
 
         Raises:
-            ValueError: Se o nome informado não estiver registrado.
+            ValueError: Se o nome informado não estiver registrado ou parâmetros obrigatórios estão ausentes.
+
+        Examples:
+            >>> scheduler = SchedulerFactory.criar_scheduler('FIFO')
+            >>> scheduler = SchedulerFactory.criar_scheduler('SRTF', quantum=5)
+            >>> scheduler = SchedulerFactory.criar_scheduler('PRIOPEnv', quantum=5, alpha=1)
         """
 
         if not nome_algoritmo:
@@ -200,5 +206,14 @@ class SchedulerFactory:
                 f"Válidos: {algoritmos_suportados}."
             )
 
+        # Validação de parâmetros obrigatórios por algoritmo
+        if chave == 'PRIOPENV':
+            if quantum is None:
+                raise ValueError("Algoritmo PRIOPEnv requer parâmetro 'quantum'")
+            if alpha is None:
+                alpha = 1.0  # Valor padrão
+            return scheduler_cls(quantum, alpha)
+
+        # Para outros algoritmos, apenas quantum é usado
         return scheduler_cls(quantum=quantum)
 
