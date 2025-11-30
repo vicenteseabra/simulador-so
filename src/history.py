@@ -244,14 +244,7 @@ class HistoryManager:
         self.indice_atual = -1
 
     def _serialize_task(self, task: Task) -> Dict[str, Any]:
-        """Serializa uma tarefa para dicionário.
-
-        Args:
-            task: Tarefa a ser serializada
-
-        Returns:
-            Dicionário representando a tarefa
-        """
+        """Serializa uma tarefa para dicionário."""
         task_dict = {
             'id': task.id,
             'cor': task.cor,
@@ -266,26 +259,24 @@ class HistoryManager:
             'numero_preempcoes': task.numero_preempcoes
         }
 
-        # Serializa eventos se existirem
-        if hasattr(task, 'eventos') and task.eventos:
+        if hasattr(task, 'eventos'):
             task_dict['eventos'] = []
             for evento in task.eventos:
+                # Se o evento é um objeto (IOEvent, etc), copiamos seus dados
                 if hasattr(evento, '__dict__'):
-                    task_dict['eventos'].append(copy.deepcopy(evento.__dict__))
+                    # Cria uma nova instância do mesmo tipo
+                    novo_evento = copy.deepcopy(evento)
+                    task_dict['eventos'].append(novo_evento)
+                elif isinstance(evento, dict):
+                    task_dict['eventos'].append(copy.deepcopy(evento))
                 else:
-                    task_dict['eventos'].append(str(evento))
+                    # Fallback
+                    task_dict['eventos'].append(copy.deepcopy(evento))
 
         return task_dict
 
     def _serialize_scheduler(self, scheduler) -> Dict[str, Any]:
-        """Serializa o escalonador para dicionário.
-
-        Args:
-            scheduler: Escalonador a ser serializado
-
-        Returns:
-            Dicionário representando o escalonador
-        """
+        """Serializa o escalonador para dicionário."""
         scheduler_dict = {
             'tipo': scheduler.__class__.__name__,
             'quantum': getattr(scheduler, 'quantum', None),
@@ -293,11 +284,16 @@ class HistoryManager:
         }
 
         # Adiciona atributos específicos de algoritmos
-        if hasattr(scheduler, 'alpha'):  # PrioridadeEnvScheduler
+        if hasattr(scheduler, 'alpha'):
             scheduler_dict['alpha'] = scheduler.alpha
 
         if hasattr(scheduler, 'tempo_atual_quantum'):
             scheduler_dict['tempo_atual_quantum'] = scheduler.tempo_atual_quantum
+            
+        # --- CORREÇÃO CRÍTICA: Salvar o estado das prioridades dinâmicas (Aging) ---
+        if hasattr(scheduler, 'prioridades_dinamicas'):
+            # É fundamental usar deepcopy aqui para congelar os valores numéricos
+            scheduler_dict['prioridades_dinamicas'] = copy.deepcopy(scheduler.prioridades_dinamicas)
 
         return scheduler_dict
 
