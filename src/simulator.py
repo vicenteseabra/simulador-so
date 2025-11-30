@@ -2,6 +2,8 @@ import time
 from src.clock import Clock
 from src.task import Task, TaskState
 from src.gantt import GanttChart
+from src.mutex_manager import MutexManager
+from src.io_manager import IOManager
 
 
 class Simulator:
@@ -25,12 +27,20 @@ class Simulator:
         self.historico_execucao = []
         tipo_algo = getattr(scheduler, 'tipo_escalonamento', scheduler.__class__.__name__)
         self.gantt = GanttChart(tipo_escalonamento=tipo_algo)
-        # Estruturas para suporte a bloqueio e mutex
+
+        # Gerenciadores de recursos
+        self.mutex_manager = MutexManager()
+        self.io_manager = IOManager()
+
+        # Eventos pendentes por tarefa: task_id -> [eventos...]
+        self.eventos_pendentes = {}
+
+        # Estruturas para suporte a bloqueio e mutex (compatibilidade)
         # _blocked: task_id -> {'tipo': 'io'|'mutex', 'remaining': int|None, 'mutex_id': str|None}
         self._blocked = {}
-        # mutexes: mutex_id -> owner_task_id or None
+        # mutexes: mutex_id -> owner_task_id or None (mantido para compatibilidade)
         self.mutexes = {}
-        # filas de espera por mutex: mutex_id -> [task_id,...]
+        # filas de espera por mutex: mutex_id -> [task_id,...] (mantido para compatibilidade)
         self._mutex_queues = {}
 
     # Carregamento e controle de tarefas
@@ -53,75 +63,159 @@ class Simulator:
                 self.scheduler.adicionar_tarefa(task)
                 self.gantt.registrar_ingresso_fila(task.id, tempo_atual)
 
+    def verificar_io_conclusoes(self):
+        """
+        Verifica operações de I/O concluídas e desbloqueia tarefas correspondentes.
+        Usa o IOManager para obter lista de tarefas com I/O completo.
+        """
+        tempo_atual = self.clock.get_tempo()
+        conclusoes = self.io_manager.verificar_conclusoes(tempo_atual)
+
+        for task_id in conclusoes:
+            task = next((t for t in self.tasks if t.id == task_id), None)
+            if task and task.estado == TaskState.BLOQUEADO:
+                task.desbloquear()
+                # Remove da estrutura de bloqueio legada
+                if task_id in self._blocked:
+                    self._blocked.pop(task_id, None)
+                # Adiciona tarefa de volta à fila de prontos
+                # IMPORTANTE: verificamos se já não está na fila para evitar duplicatas
+                if task not in self.scheduler.fila_prontos:
+                    self.scheduler.adicionar_tarefa(task)
+                    # DEBUG (desativado)
+                    # print(f"[DEBUG] Tarefa {task_id} desbloqueada e adicionada à fila no tempo {tempo_atual}")
+
+    def processar_eventos_tarefa(self, tarefa, tempo_atual):
+        """
+        Processa eventos da tarefa que devem ocorrer no tick atual.
+        Verifica eventos com tempo relativo igual ao tempo de execução da tarefa.
+
+        Args:
+            tarefa: Tarefa em execução
+            tempo_atual: Tempo atual do sistema
+        """
+        if not hasattr(tarefa, 'eventos') or not tarefa.eventos:
+            return
+
+        # Identifica eventos a disparar neste tick
+        # Eventos são disparados quando tempo_execucao da tarefa atinge tempo_relativo do evento
+        eventos_a_disparar = [
+            ev for ev in list(tarefa.eventos)
+            if hasattr(ev, 'tempo_relativo') and tarefa.tempo_execucao == int(ev.tempo_relativo)
+        ]
+
+        for evento in eventos_a_disparar:
+            try:
+                # Executa o evento
+                resultado = evento.executar(self, tarefa)
+
+                # Registra no histórico (opcional)
+                if resultado:
+                    if tarefa.id not in self.eventos_pendentes:
+                        self.eventos_pendentes[tarefa.id] = []
+                    self.eventos_pendentes[tarefa.id].append({
+                        'tempo': tempo_atual,
+                        'tipo': evento.tipo,
+                        'resultado': resultado
+                    })
+
+            except Exception as e:
+                # Não deixamos uma exceção de evento quebrar a simulação
+                print(f"Aviso: Erro ao processar evento {evento.tipo} da tarefa {tarefa.id}: {e}")
+
+            # Remove evento disparado
+            if evento in tarefa.eventos:
+                tarefa.eventos.remove(evento)
+
     # Execução de um ciclo
     def executar_tick(self):
         """
-        Executa um ciclo de simulação (1 unidade de tempo):
-        1. Verifica novas tarefas
-        2. Pede ao escalonador a próxima tarefa
-        3. Executa a tarefa (1 unidade)
-        4. Atualiza estados e histórico
-        5. Avança o relógio
+        Executa um ciclo de simulação (1 unidade de tempo) com novo fluxo integrado:
+        1. Desbloqueia tarefas com I/O completo
+        2. Verifica novas tarefas
+        3. Aplica envelhecimento (se scheduler suportar)
+        4. Seleciona e executa próxima tarefa
+        5. Processa eventos da tarefa executada
+        6. Atualiza estados e histórico
+        7. Avança o relógio
         """
         tempo_atual = self.clock.get_tempo()
+
+        # PASSO 1: Desbloquear tarefas com I/O completo
+        self.verificar_io_conclusoes()
+
+        # PASSO 2: Verificar chegada de novas tarefas
         self.verificar_novas_tarefas()
 
-        # Pausa tarefa atualmente executando (para permitir preempção)
+        # Identifica tarefa atualmente executando
         tarefa_executando = None
         for t in self.scheduler.fila_prontos:
             if t.estado == TaskState.EXECUTANDO:
                 tarefa_executando = t
                 break
         
-        # Seleciona próxima tarefa
+        # PASSO 3: Aplicar envelhecimento (se scheduler suportar)
+        if hasattr(self.scheduler, 'aplicar_envelhecimento'):
+            self.scheduler.aplicar_envelhecimento()
+
+        # PASSO 4: Selecionar próxima tarefa (lógica normal de escalonamento)
         tarefa = self.scheduler.selecionar_proxima_tarefa()
         
         # Se mudou de tarefa, pausa a anterior (preempção)
         if tarefa_executando and tarefa != tarefa_executando:
             tarefa_executando.preemptar()
         
+        # PASSO 5: Executar tarefa selecionada
         if tarefa:
-            # Se a tarefa selecionada estava PRONTO, ela agora INICIA a execução.
+            # Se a tarefa selecionada estava PRONTO, ela agora INICIA a execução
             if tarefa.estado == TaskState.PRONTO:
                 tarefa.iniciar()
 
+            # Executa um tick da tarefa
             tarefa.executar(tempo_atual)
             self.historico_execucao.append((tempo_atual, tarefa.id))
 
-            # Após executar um tick, verifica se algum evento da tarefa deve ser disparado
-            # Eventos são definidos em termos de tempo relativo de execução (tempo_execucao)
-            if tarefa.estado != TaskState.TERMINADO and getattr(tarefa, 'eventos', None):
-                to_fire = [ev for ev in list(tarefa.eventos)
-                           if hasattr(ev, 'tempo_relativo') and tarefa.tempo_execucao == int(ev.tempo_relativo)]
-                for ev in to_fire:
-                    try:
-                        ev.executar(self, tarefa)
-                    except Exception:
-                        # Não deixamos uma exceção de evento quebrar a simulação
-                        pass
-                    # Remove evento disparado
-                    if ev in tarefa.eventos:
-                        tarefa.eventos.remove(ev)
+            # PASSO 6: Processar eventos da tarefa DEPOIS de executar
+            # (eventos são disparados após a execução do tick)
+            if tarefa.estado != TaskState.TERMINADO:
+                self.processar_eventos_tarefa(tarefa, tempo_atual)
 
+            # Verifica se tarefa terminou
             if tarefa.estado == TaskState.TERMINADO:
                 self.scheduler.remover_tarefa(tarefa)
         else:
             # Nenhuma tarefa disponível (CPU ociosa)
             self.historico_execucao.append((tempo_atual, None))
-        # Avança o relógio
-        # Atualiza bloqueios (I/O e mutexes) antes de avançar o relógio
+
+        # PASSO 7: Atualizar bloqueios legados e avançar o relógio
+        # Mantém compatibilidade com código existente
         self._update_blocked_tasks()
         self.clock.tick()
 
     # --- Bloqueio e Mutex API (integração com src/events.py) ---
     def bloquear_tarefa(self, task_id: str, duracao: int):
-        """Bloqueia a tarefa por `duracao` ticks (I/O)."""
+        """
+        Bloqueia a tarefa por `duracao` ticks (I/O).
+        Usa IOManager para gerenciar a operação de I/O.
+        """
         task = next((t for t in self.tasks if t.id == task_id), None)
         if not task:
             return False
+
+        # Bloqueia a tarefa
         task.bloquear()
-        # registra bloqueio com contador
+
+        # Remove da fila de prontos se estiver lá
+        if task in self.scheduler.fila_prontos:
+            self.scheduler.remover_tarefa(task)
+
+        # Registra operação de I/O no IOManager
+        tempo_atual = self.clock.get_tempo()
+        self.io_manager.iniciar_io(task_id, duracao, tempo_atual)
+
+        # Mantém estrutura legada para compatibilidade
         self._blocked[task_id] = {'tipo': 'io', 'remaining': int(duracao), 'mutex_id': None}
+
         return True
 
     # alias com nome em inglês
@@ -129,70 +223,80 @@ class Simulator:
         return self.bloquear_tarefa(task_id, duracao)
 
     def solicitar_mutex(self, task_id: str, mutex_id: str) -> bool:
-        """Solicita o mutex; retorna True se concedido, False se enfileirado."""
-        owner = self.mutexes.get(mutex_id)
-        if owner is None:
-            # concede imediatamente
-            self.mutexes[mutex_id] = task_id
-            return True
-        else:
-            # coloca na fila de espera e bloqueia a tarefa (aguardando mutex)
-            q = self._mutex_queues.setdefault(mutex_id, [])
-            if task_id not in q:
-                q.append(task_id)
+        """
+        Solicita o mutex; retorna True se concedido, False se enfileirado.
+        Usa MutexManager para gerenciar mutexes.
+        """
+        # Usa o MutexManager
+        concedido = self.mutex_manager.solicitar_mutex(mutex_id, task_id)
+
+        if not concedido:
+            # Mutex não foi concedido - bloqueia a tarefa
             task = next((t for t in self.tasks if t.id == task_id), None)
             if task:
                 task.bloquear()
+                # Remove da fila de prontos
+                if task in self.scheduler.fila_prontos:
+                    self.scheduler.remover_tarefa(task)
+                # Mantém estrutura legada para compatibilidade
                 self._blocked[task_id] = {'tipo': 'mutex', 'remaining': None, 'mutex_id': mutex_id}
-            return False
+
+        # Sincroniza estruturas legadas
+        self.mutexes = {mid: self.mutex_manager.mutexes.get(mid, {}).get('dono')
+                       for mid in self.mutex_manager.mutexes}
+        self._mutex_queues = {mid: list(self.mutex_manager.mutexes.get(mid, {}).get('fila_espera', []))
+                             for mid in self.mutex_manager.mutexes}
+
+        return concedido
 
     def request_mutex(self, task_id: str, mutex_id: str) -> bool:
         return self.solicitar_mutex(task_id, mutex_id)
 
     def liberar_mutex(self, task_id: str, mutex_id: str) -> bool:
-        """Libera o mutex; se houver fila de espera, concede ao próximo e desbloqueia-o."""
-        owner = self.mutexes.get(mutex_id)
-        if owner != task_id:
-            # tentativa de liberar mutex que não é de propriedade
+        """
+        Libera o mutex; se houver fila de espera, concede ao próximo e desbloqueia-o.
+        Usa MutexManager para gerenciar mutexes.
+        """
+        # Usa o MutexManager
+        try:
+            next_task_id = self.mutex_manager.liberar_mutex(mutex_id, task_id)
+
+            # Se há próxima tarefa na fila, desbloqueia ela
+            if next_task_id:
+                next_task = next((t for t in self.tasks if t.id == next_task_id), None)
+                if next_task:
+                    next_task.desbloquear()
+                    # Remove do bloqueio
+                    if next_task_id in self._blocked:
+                        self._blocked.pop(next_task_id, None)
+                    # Adiciona de volta à fila de prontos
+                    if next_task not in self.scheduler.fila_prontos:
+                        self.scheduler.adicionar_tarefa(next_task)
+
+            # Sincroniza estruturas legadas
+            self.mutexes = {mid: self.mutex_manager.mutexes.get(mid, {}).get('dono')
+                           for mid in self.mutex_manager.mutexes}
+            self._mutex_queues = {mid: list(self.mutex_manager.mutexes.get(mid, {}).get('fila_espera', []))
+                                 for mid in self.mutex_manager.mutexes}
+
+            return True
+
+        except ValueError:
+            # Tentativa de liberar mutex que não é de propriedade
             return False
-        queue = self._mutex_queues.get(mutex_id) or []
-        if queue:
-            next_task_id = queue.pop(0)
-            # concede para próximo
-            self.mutexes[mutex_id] = next_task_id
-            # desbloqueia a próxima tarefa
-            next_task = next((t for t in self.tasks if t.id == next_task_id), None)
-            if next_task:
-                next_task.desbloquear()
-                # remove do bloqueio por mutex
-                if next_task_id in self._blocked:
-                    self._blocked.pop(next_task_id, None)
-        else:
-            # nenhum esperando -> libera
-            self.mutexes[mutex_id] = None
-        return True
 
     def release_mutex(self, task_id: str, mutex_id: str) -> bool:
         return self.liberar_mutex(task_id, mutex_id)
 
     def _update_blocked_tasks(self):
-        """Atualiza contadores de bloqueio e desbloqueia tarefas cujo tempo terminou."""
-        to_unblock = []
-        for task_id, info in list(self._blocked.items()):
-            if info['tipo'] == 'io':
-                # decrementa contador
-                info['remaining'] -= 1
-                if info['remaining'] <= 0:
-                    to_unblock.append(task_id)
-            else:
-                # mutex wait -> nada a fazer aqui (liberação feita em liberar_mutex)
-                continue
-
-        for tid in to_unblock:
-            task = next((t for t in self.tasks if t.id == tid), None)
-            if task:
-                task.desbloquear()
-            self._blocked.pop(tid, None)
+        """
+        Atualiza estruturas legadas de bloqueio.
+        NOTA: A lógica de I/O agora é gerenciada pelo IOManager em verificar_io_conclusoes().
+        Este método mantido apenas para compatibilidade com código legado de mutex.
+        """
+        # Removida lógica de I/O - agora gerenciada por IOManager
+        # A verificação de mutex já é feita em liberar_mutex()
+        pass
 
     # Controle de término
     def tem_tarefas_pendentes(self):

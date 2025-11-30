@@ -35,7 +35,7 @@ Representa uma tarefa/processo no simulador (Task Control Block).
 - `ingresso` (`int`): Tempo de chegada da tarefa no sistema
 - `duracao` (`int`): Tempo total de execução necessário (burst time)
 - `prioridade` (`int`): Prioridade da tarefa (menor valor = maior prioridade)
-- `eventos` (`list`): Lista de eventos (E/S, etc.) que ocorrem durante a execução
+- `eventos` (`list`): Lista de eventos (IOEvent, MutexLockEvent, MutexUnlockEvent) que ocorrem durante a execução. Eventos são disparados quando o `tempo_execucao` da tarefa atinge o `tempo_relativo` do evento
 - `tempo_restante` (`int`): Tempo de execução restante (inicialmente igual a `duracao`)
 - `estado` (`str`): Estado atual da tarefa (valor de `TaskState`)
 - `tempo_inicio` (`int`): Primeiro momento em que a tarefa começou a executar (None se ainda não executou)
@@ -178,6 +178,7 @@ Retorna uma representação textual da tarefa para debug.
 
 ## Exemplo de Uso
 
+### Uso Básico
 ```python
 from src.task import Task, TaskState
 
@@ -199,6 +200,34 @@ print(task.estado)  # PRONTO
 
 # Iniciar execução
 task.iniciar()
+```
+
+### Uso com Eventos
+```python
+from src.task import Task
+from src.events import IOEvent, MutexLockEvent, MutexUnlockEvent
+
+# Criar eventos
+eventos = [
+    IOEvent(tipo='IO', tempo_relativo=2, task_id='T1', duracao=3),
+    MutexLockEvent(tipo='LOCK', tempo_relativo=6, task_id='T1', mutex_id='recurso1'),
+    MutexUnlockEvent(tipo='UNLOCK', tempo_relativo=8, task_id='T1', mutex_id='recurso1')
+]
+
+# Criar tarefa com eventos
+task = Task(
+    task_id="T1",
+    cor="#FF0000",
+    ingresso=0,
+    duracao=10,
+    prioridade=1,
+    eventos=eventos
+)
+
+# Os eventos serão processados automaticamente pelo Simulator quando:
+# - tempo_execucao da tarefa atingir tempo_relativo do evento
+# - A tarefa estiver em estado EXECUTANDO
+```
 print(task.estado)  # EXECUTANDO
 
 # Executar por 3 ticks
