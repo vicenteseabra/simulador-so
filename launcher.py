@@ -44,7 +44,6 @@ def menu_principal():
         
         opcao = input("Escolha uma categoria: ")
 
-        # Mapeamento: Opção -> (Nome Exibição, Prefixo do Arquivo)
         categorias = {
             "1": ("FIFO", "config_fifo"),
             "2": ("SRTF", "config_srtf"),
