@@ -1,0 +1,3 @@
+FIFO;1
+t_pingpong;#0000FF;0;10;0;IO:2-2;IO:6-2
+t_fundo;#CCCCCC;0;10;0
