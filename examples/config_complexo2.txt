@@ -1,4 +1,0 @@
-PRIOPEnv;4;1
-t_baixa;#FF0000;0;12;10;ML01:0;MU01:10
-t_media;#0000FF;1;10;5;IO:2-2
-t_alta;#00FF00;2;4;0;ML01:0;MU01:2

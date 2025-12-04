@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Type
-from task import Task, TaskState
+from src.task import Task, TaskState
 
 
 class Scheduler(ABC):

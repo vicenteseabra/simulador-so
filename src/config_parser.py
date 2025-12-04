@@ -10,8 +10,8 @@ Eventos:
     - MLxx:yy → MutexLockEvent (mutex_id xx, tempo yy)
     - MUxx:yy → MutexUnlockEvent (mutex_id xx, tempo yy)
 """
-from task import Task
-from events import IOEvent, MutexLockEvent, MutexUnlockEvent
+from src.task import Task
+from src.events import IOEvent, MutexLockEvent, MutexUnlockEvent
 class ConfigParser:
     """Parser para arquivos de configuração do simulador."""
     ALGORITMOS_VALIDOS = ['FIFO', 'SRTF', 'PRIORIDADE', 'PRIOPENV']
@@ -131,6 +131,16 @@ class ConfigParser:
             # Campos obrigatórios
             task_id = partes[0]
             cor = partes[1] if partes[1] else self.COR_PADRAO
+            # Normaliza cor: garante que comece com '#' e seja hex válido
+            if cor:
+                cor = cor.strip()
+                if not cor.startswith('#'):
+                    cor = f"#{cor}"
+                # Validação simples: deve ser '#RRGGBB'
+                if len(cor) != 7 or not all(c in '0123456789ABCDEFabcdef#' for c in cor):
+                    # Se inválido, usa cor padrão e registra aviso
+                    self.avisos.append(f"Cor inválida na linha {num_linha}: '{partes[1]}'. Usando cor padrão.")
+                    cor = self.COR_PADRAO
             ingresso = int(partes[2])
             duracao = int(partes[3])
             if not task_id:

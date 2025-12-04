@@ -1,3 +1,0 @@
-PRIOPEnv;4;1
-t_longa;#FF0000;0;20;5
-t_baixa;#00FF00;1;5;10

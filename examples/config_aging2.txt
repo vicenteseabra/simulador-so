@@ -1,3 +1,0 @@
-PRIOPEnv;2;1
-t_ruim;#FF0000;0;10;10
-t_boa;#00FF00;2;5;5

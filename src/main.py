@@ -53,6 +53,58 @@ def configurar_argumentos() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def exibir_tasks_carregadas(tasks: List[Task]):
+    """
+    Exibe de forma formatada as tasks que foram carregadas do arquivo de configuração.
+    """
+    print("\n=== Tasks Carregadas ===")
+    if not tasks:
+        print("Nenhuma task foi carregada.")
+        return
+
+    print(f"Total de tasks: {len(tasks)}\n")
+
+    # Cabeçalho da tabela
+    print(f"{'ID':<10} | {'Cor':<10} | {'Ingresso':<10} | {'Duração':<10} | {'Prioridade':<10} | {'Eventos':<15}")
+    print("-" * 100)
+
+    # Detalhes de cada task
+    for task in sorted(tasks, key=lambda t: t.ingresso):
+        eventos_str = ""
+        if task.eventos:
+            eventos_resumo = []
+            for ev in task.eventos:
+                if isinstance(ev, dict):
+                    tipo = ev.get('tipo', '?')
+                    tempo = ev.get('tempo', '?')
+                    if tipo == 'IO':
+                        dur = ev.get('duracao', 0)
+                        eventos_resumo.append(f"{tipo}@{tempo}({dur})")
+                    else:
+                        eventos_resumo.append(f"{tipo}@{tempo}")
+                else:
+                    # Evento é um objeto
+                    if hasattr(ev, 'tipo') and hasattr(ev, 'tempo_relativo'):
+                        if hasattr(ev, 'duracao'):
+                            eventos_resumo.append(f"{ev.tipo}@{ev.tempo_relativo}({ev.duracao})")
+                        else:
+                            eventos_resumo.append(f"{ev.tipo}@{ev.tempo_relativo}")
+                    else:
+                        eventos_resumo.append(str(ev))
+            eventos_str = ", ".join(eventos_resumo)
+        else:
+            eventos_str = "Nenhum"
+
+        # Trunca a string de eventos se for muito longa
+        if len(eventos_str) > 50:
+            eventos_str = eventos_str[:47] + "..."
+
+        print(f"{task.id:<10} | {task.cor:<10} | {task.ingresso:<10} | {task.duracao:<10} | "
+              f"{task.prioridade:<10} | {eventos_str:<15}")
+
+    print("-" * 100)
+
+
 def exibir_resultados(simulator: Simulator, resultados: Dict[str, Any], args: argparse.Namespace):
     """
     Exibe as métricas finais da simulação no terminal.
@@ -73,7 +125,7 @@ def exibir_resultados(simulator: Simulator, resultados: Dict[str, Any], args: ar
         return
 
     # Cabeçalho da tabela
-    print(f"{'ID':<5} | {'Turnaround':<10} | {'Espera':<10} | {'Resposta':<10}")
+    print(f"{'ID':<10} | {'Turnaround':<10} | {'Espera':<10} | {'Resposta':<10}")
     print("-" * 49)
 
     total_turnaround = 0
@@ -88,15 +140,15 @@ def exibir_resultados(simulator: Simulator, resultados: Dict[str, Any], args: ar
             total_turnaround += metricas['turnaround_time']
             total_espera += metricas['waiting_time']
             total_resposta += metricas['response_time']
-            print(f"{task.id:<5} | {metricas['turnaround_time']:<10} | "
+            print(f"{task.id:<10} | {metricas['turnaround_time']:<10} | "
                   f"{metricas['waiting_time']:<10} | {metricas['response_time']:<10}")
         else:
-            print(f"{task.id:<5} | {'N/A (Não finalizada)':<42}")
+            print(f"{task.id:<10} | {'N/A (Não finalizada)':<42}")
 
     # Médias
     if tarefas_finalizadas > 0:
         print("-" * 49)
-        print(f"{'MÉDIA':<5} | {total_turnaround / tarefas_finalizadas:<10.2f} | "
+        print(f"{'MÉDIA':<10} | {total_turnaround / tarefas_finalizadas:<10.2f} | "
               f"{total_espera / tarefas_finalizadas:<10.2f} | "
               f"{total_resposta / tarefas_finalizadas:<10.2f}")
 
@@ -118,7 +170,8 @@ def main(args: argparse.Namespace):
             print(f"   - {aviso}")
             
     print(f"   -> Algoritmo: {config['algoritmo']} (Quantum: {config.get('quantum')})")
-    print(f"   -> Tarefas carregadas: {len(tasks)}")
+    # Exibir detalhes das tasks carregadas
+    exibir_tasks_carregadas(tasks)
 
     # 2. Criar scheduler
     print("2. Criando escalonador...")

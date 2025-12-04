@@ -39,37 +39,7 @@ class Task:
         self.ingresso = ingresso
         self.duracao = duracao
         self.prioridade = prioridade
-        # Normaliza eventos: o ConfigParser pode fornecer dicionários (tipo, tempo, duracao)
-        # enquanto o subsistema de eventos fornece instâncias de Event. Converte
-        # dicionários em objetos do módulo `src.events` quando necessário.
-        if eventos:
-            normalized = []
-            for ev in eventos:
-                if isinstance(ev, dict):
-                    try:
-                        from src import events as _events
-                        tipo = ev.get('tipo')
-                        tempo = ev.get('tempo')
-                        if tipo == 'IO':
-                            dur = ev.get('duracao', 0)
-                            normalized.append(_events.IOEvent(tipo='IO', tempo_relativo=tempo, duracao=dur, task_id=task_id))
-                        elif tipo == 'ML':
-                            # Mutex Lock (uses a default mutex id)
-                            normalized.append(_events.MutexLockEvent(tipo='ML', tempo_relativo=tempo, mutex_id='m0', task_id=task_id))
-                        elif tipo == 'MU':
-                            normalized.append(_events.MutexUnlockEvent(tipo='MU', tempo_relativo=tempo, mutex_id='m0', task_id=task_id))
-                        else:
-                            # Unknown event dict - ignore
-                            continue
-                    except Exception:
-                        # If importing/conversion fails, keep original dict for backward compatibility
-                        normalized.append(ev)
-                else:
-                    # Already an Event instance (or other object)
-                    normalized.append(ev)
-            self.eventos = normalized
-        else:
-            self.eventos = []
+        self.eventos = eventos if eventos else []
         
         # Controle de execução
         self.tempo_restante = duracao

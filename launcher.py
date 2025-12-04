@@ -39,6 +39,7 @@ def menu_principal():
         print("5) Testes de Mutex (Sincronização)")
         print("6) Testes de I/O (Entrada/Saída)")
         print("7) Cenários Complexos (Integrados)")
+        print("8) Casos de Teste (Avaliação)")
         print("\n0) Sair")
         print("=======================================")
         
@@ -51,7 +52,8 @@ def menu_principal():
             "4": ("Aging / PRIOPEnv", "config_aging"),
             "5": ("Mutex", "config_mutex"),
             "6": ("I/O", "config_io"),
-            "7": ("Complexo", "config_complexo")
+            "7": ("Complexo", "config_complexo"),
+            "8": ("Casos de Teste", "caso-teste")
         }
 
         if opcao == "0":

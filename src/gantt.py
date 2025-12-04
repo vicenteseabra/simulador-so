@@ -224,9 +224,9 @@ class GanttChart:
         if not self.intervalos:
             return self._svg_vazio()
         
-        # Configurações
+        # Configurações básicas
         H_LINHA = 40
-        M_TOPO, M_ESQ, M_DIR, M_BAIXO = 60, 50, 50, 80
+        M_TOPO, M_DIR, M_BAIXO = 60, 50, 100
         L_TICK = 50
         
         dados = self.get_dados()
@@ -235,6 +235,11 @@ class GanttChart:
         num_tasks = dim['altura']
         tempo_total = dim['largura']
         
+        # Calcula margem esquerda dinamicamente baseada no maior nome de task
+        max_task_name_len = max(len(str(task_id)) for task_id in dados.keys()) if dados else 0
+        # Aproximadamente 8 pixels por caractere + 50 pixels de margem extra para o label "Tarefas"
+        M_ESQ = max(120, (max_task_name_len * 8) + 50)
+
         w = M_ESQ + (tempo_total * L_TICK) + M_DIR
         h = M_TOPO + (num_tasks * H_LINHA) + M_BAIXO
         
@@ -319,13 +324,16 @@ class GanttChart:
         num_tasks = len(dados)
         
         # Labels individuais das tarefas
+        # Posiciona os labels 15 pixels antes do início do gráfico
         for idx, task_id in enumerate(sorted(dados.keys(), reverse=True)):
             y = m_topo + (idx * h_linha) + (h_linha / 2) + 5
-            x = m_esq - 10
+            x = m_esq - 15
             svg += f'  <text x="{x}" y="{y}" text-anchor="end" class="task-label">{task_id}</text>\n'
         
         # Título do eixo vertical "Tarefas"
-        x_titulo = m_esq - 30
+        # Calcula o tamanho médio dos nomes para posicionar o título
+        max_task_name_len = max(len(str(task_id)) for task_id in dados.keys()) if dados else 0
+        x_titulo = 15  # Posição fixa à esquerda
         y_titulo = m_topo + (num_tasks * h_linha / 2)
         svg += f'  <text x="{x_titulo}" y="{y_titulo}" text-anchor="middle" class="axis-label" '
         svg += f'font-weight="bold" transform="rotate(-90 {x_titulo} {y_titulo})">Tarefas</text>\n'
@@ -374,11 +382,12 @@ class GanttChart:
         """Legenda."""
         svg = '  <!-- Legenda -->\n'
         y = m_topo + (n_tasks * h_linha) + 60
-        x = m_esq
-        
-        svg += f'  <text x="{x}" y="{y}" class="legend-text" font-weight="bold">Legenda:</text>\n'
-        
-        x_off = x + 60
+
+        x_legenda_inicio = m_esq + 10  # Deslocamento para direita
+
+        svg += f'  <text x="{x_legenda_inicio}" y="{y}" class="legend-text" font-weight="bold">Legenda:</text>\n'
+
+        x_off = x_legenda_inicio + 60
         for idx, task_id in enumerate(sorted(dados.keys())):
             cor = dados[task_id][0]['cor']
             x_item = x_off + (idx * 100)
