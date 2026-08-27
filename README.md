@@ -40,7 +40,7 @@ t03;0000FF;3;5;5;
 
 Rodando com `--modo completo`, o simulador imprime o tempo total de execução e uma tabela de métricas por tarefa (turnaround, espera e resposta, com as respectivas médias do cenário) e, em seguida, o diagrama de Gantt correspondente:
 
-![Diagrama de Gantt](output/caso-teste-001.svg)
+![Diagrama de Gantt](assets/gantt-exemplo.svg)
 
 ## Como executar
 
