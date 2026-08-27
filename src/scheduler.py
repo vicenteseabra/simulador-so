@@ -117,7 +117,6 @@ class PrioridadeEnvScheduler(Scheduler):
     def aplicar_envelhecimento(self):
         for tarefa in self.fila_prontos:
             if tarefa.estado == TaskState.PRONTO:
-                # CORREÇÃO: Usa .get() para evitar KeyError se a tarefa veio de um snapshot
                 prio_atual = self.prioridades_dinamicas.get(tarefa.id, float(tarefa.prioridade))
                 self.prioridades_dinamicas[tarefa.id] = prio_atual - self.alpha
 
@@ -125,10 +124,8 @@ class PrioridadeEnvScheduler(Scheduler):
         tarefas = [t for t in self.fila_prontos if t.estado in (TaskState.PRONTO, TaskState.EXECUTANDO)]
         if not tarefas: return None
 
-        # CORREÇÃO: Usa .get() aqui também
         proxima = min(tarefas, key=lambda t: self.prioridades_dinamicas.get(t.id, float(t.prioridade)))
-        
-        # Reset da prioridade ao executar
+
         self.prioridades_dinamicas[proxima.id] = float(proxima.prioridade)
         return proxima
 
